@@ -1,0 +1,56 @@
+{
+  "name": "impact_vcf2gds",
+  "title": "IMPACT VCF to GDS Converter",
+  "summary": "Converts VCF files to GDS Files for the IMPACT pipeline",
+  "dxapi": "1.0.0",
+  "version": "0.0.3",
+  "inputSpec": [
+    {
+      "name": "vcf_files",
+      "label": "VCF Files",
+      "class": "array:file",
+      "optional": false,
+      "patterns": [
+        "*.vcf",
+        "*.vcf.gz"
+      ],
+      "help": "Array or singular VCF files to convert"
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "gds_files",
+      "label": "GDS Files",
+      "class": "array:file",
+      "patterns": ["*.gds"],
+      "help": "Converted GDS files"
+    }
+  ],
+  "runSpec": {
+    "timeoutPolicy": {
+      "*": {
+        "hours": 360
+      }
+    },
+    "interpreter": "bash",
+    "file": "src/vcf2gds.sh",
+    "distribution": "Ubuntu",
+    "release": "20.04",
+    "version": "0"
+  },
+  "access": {
+    "network": [
+      "*"
+    ],
+    "project": "CONTRIBUTE"
+  },
+  "regionalOptions": {
+    "aws:eu-west-2": {
+      "systemRequirements": {
+        "*": {
+          "instanceType": "mem1_ssd1_v2_x36"
+        }
+      }
+    }
+  }
+}

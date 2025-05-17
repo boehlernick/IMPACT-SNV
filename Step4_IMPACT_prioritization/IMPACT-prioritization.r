@@ -1,0 +1,192 @@
+#!/usr/bin/env Rscript
+
+# IMPACT-SNV Variant Prioritization Script
+# Processes annotated GDS files and assigns pathogenicity scores and tiers to variants.
+# Usage: Rscript IMPACT-prioritization.r --gda GeneList.txt --outprefix anno_merged_
+
+suppressPackageStartupMessages({
+  if (!requireNamespace("optparse", quietly = TRUE)) install.packages("optparse")
+  library(optparse)
+  if (!requireNamespace("rlang", quietly = TRUE)) install.packages("rlang")
+  if (!requireNamespace("cli", quietly = TRUE)) install.packages("cli")
+  if (!requireNamespace("stringr", quietly = TRUE)) install.packages("stringr")
+  if (!requireNamespace("readr", quietly = TRUE)) install.packages("readr")
+  if (!requireNamespace("BiocManager", quietly=TRUE)) install.packages("BiocManager")
+  BiocManager::install(c("SeqArray", "SeqVarTools"))
+  library(rlang)
+  library(cli)
+  library(dplyr)
+  library(stringr)
+  library(parallel)
+  library(readr)
+  library(SeqArray)
+  library(SeqVarTools)
+  library(tidyr)
+})
+
+# Argument parsing
+option_list <- list(
+  make_option(c("-g", "--gda"), type="character", default="GeneList.txt", help="Gene-disease association file [default %default]"),
+  make_option(c("-o", "--outprefix"), type="character", default="anno_merged_", help="Output GDS file prefix [default %default]")
+)
+opt <- parse_args(OptionParser(option_list=option_list))
+gda_file <- opt$gda
+outprefix <- opt$outprefix
+
+# Utility functions
+extract_symbols <- function(entry) {
+  if (is.na(entry) || entry %in% c("", "NONE", "NONE(dist=NONE)")) return(NULL)
+  entry <- gsub("\\([^d][^i][^s][^t][^=]*\\)", "", entry)
+  symbols <- unlist(strsplit(entry, ","))
+  symbols <- gsub("\\(dist=.*\\)", "", symbols)
+  trimws(symbols)
+}
+matches_criteria <- function(symbol, cleaned_entry) {
+  symbol <- gsub("([()])", "\\\\\\1", symbol)
+  pattern <- paste0(symbol, "(,|\\(dist=[0-9]{1,4}\\)|$)")
+  grepl(pattern, cleaned_entry)
+}
+get_exonic_indices <- function(aGDS, category, values) {
+  unlist(lapply(values, function(x) which(seqGetData(aGDS, category) == x)))
+}
+
+score_variants <- function(aGDS, Open_Target_data, outprefix, chr, gdsfile) {
+  all_variants <- seqGetData(aGDS, "variant.id")
+  clnsig <- seqGetData(aGDS, "annotation/info/FunctionalAnnotation/clnsig")
+  genecode_info <- seqGetData(aGDS, "annotation/info/FunctionalAnnotation/genecode_comprehensive_info")
+  global_score_vector <- numeric(length(genecode_info))
+  matched_symbols <- character()
+  for (i in seq_along(genecode_info)) {
+    entry <- genecode_info[i]
+    symbols <- extract_symbols(entry)
+    if (!is.null(symbols)) {
+      cleaned_entry <- gsub("\\([^d][^i][^s][^t][^=]*\\)", "", entry)
+      scores <- sapply(symbols, function(symbol) {
+        if (any(matches_criteria(symbol, cleaned_entry))) {
+          score <- Open_Target_data$globalScore[Open_Target_data$symbol == symbol]
+          if (length(score) > 0) matched_symbols <<- c(matched_symbols, symbol)
+          return(score)
+        }
+        return(0)
+      })
+      scores <- unlist(scores)
+      global_score_vector[i] <- if (length(scores) == 0) 0 else max(scores, na.rm = TRUE)
+    } else {
+      global_score_vector[i] <- 0
+    }
+  }
+  cat("Number of variants with non-zero patho scores:", sum(global_score_vector > 0), "\n")
+  cat("Number of unique gene symbols matched:", length(unique(matched_symbols)), "\n")
+
+  pathogenic_indices <- which(global_score_vector > 0 & sapply(clnsig, function(x) !is.na(x) && x != "" && any(unlist(strsplit(x, "\\\\")) %in% c("Pathogenic", "Likely_pathogenic"))))
+
+  # Tier definitions
+  tier2_inc <- c("frameshift insertion", "frameshift deletion", "stopgain")
+  gencode_exonic_info_tier2 <- get_exonic_indices(aGDS, "annotation/info/FunctionalAnnotation/genecode_comprehensive_exonic_category", tier2_inc)
+  refseq_exonic_info_tier2 <- get_exonic_indices(aGDS, "annotation/info/FunctionalAnnotation/refseq_exonic_category", tier2_inc)
+  ucsc_exonic_info_tier2 <- get_exonic_indices(aGDS, "annotation/info/FunctionalAnnotation/ucsc_exonic_category", tier2_inc)
+
+  tier3_inc <- c("nonsynonymous SNV", "nonframeshift deletion", "nonframeshift insertion", "stoploss")
+  gencode_exonic_info_tier3 <- get_exonic_indices(aGDS, "annotation/info/FunctionalAnnotation/genecode_comprehensive_exonic_category", tier3_inc)
+  refseq_exonic_info_tier3 <- get_exonic_indices(aGDS, "annotation/info/FunctionalAnnotation/refseq_exonic_category", tier3_inc)
+  ucsc_exonic_info_tier3 <- get_exonic_indices(aGDS, "annotation/info/FunctionalAnnotation/ucsc_exonic_category", tier3_inc)
+
+  apc_protein_values <- seqGetData(aGDS, "annotation/info/FunctionalAnnotation/apc_protein_function_v3")
+  apc_protein_values[is.na(apc_protein_values)] <- 0
+  apc_protein_values <- pmin(apc_protein_values, 40)
+  normalized_apc_protein_values <- (apc_protein_values - 0) / 40
+
+  patho_score <- numeric(length(global_score_vector))
+  patho_score_calc <- character(length(global_score_vector))
+  valid_indices <- which(global_score_vector != 0)
+  tier1_count <- 0; tier2_count <- 0; tier3_count <- 0; tier4_count <- 0
+
+  for (i in seq_along(valid_indices)) {
+    variant <- valid_indices[i]
+    if (variant %in% pathogenic_indices) {
+      patho_score[variant] = 80 + 20 * global_score_vector[variant]
+      patho_score_calc[variant] = paste("Tier 1, 80 + 20 *", global_score_vector[variant])
+      tier1_count <- tier1_count + 1
+    } else if (variant %in% gencode_exonic_info_tier2 || variant %in% refseq_exonic_info_tier2 || variant %in% ucsc_exonic_info_tier2) {
+      patho_score[variant] = 60 + 40 * global_score_vector[variant]
+      patho_score_calc[variant] = paste("Tier 2, 60 + 40 *", global_score_vector[variant])
+      tier2_count <- tier2_count + 1
+    } else {
+      score_tier3 <- 0; score_tier4 <- 0; calc_tier3 <- ""; calc_tier4 <- ""
+      if (variant %in% gencode_exonic_info_tier3 || variant %in% refseq_exonic_info_tier3 || variant %in% ucsc_exonic_info_tier3) {
+        score_tier3 = 20 + 80 * global_score_vector[variant]
+        calc_tier3 = paste("Tier 3 = 20 + 80 *", global_score_vector[variant])
+      }
+      if (variant %in% valid_indices && apc_protein_values[which(valid_indices == variant)] > 1) {
+        index <- which(valid_indices == variant)
+        score_tier4 = 100 * ((0.5 * normalized_apc_protein_values[variant] + 0.5 * global_score_vector[variant]))
+        calc_tier4 = paste("Tier 4 = 100 * ((0.5 *", normalized_apc_protein_values[variant], "+ 0.5 *", global_score_vector[variant], "))")
+      }
+      score_tier3 <- ifelse(is.na(score_tier3), 0, score_tier3)
+      score_tier4 <- ifelse(is.na(score_tier4), 0, score_tier4)
+      if (score_tier3 > score_tier4) {
+        patho_score[variant] = score_tier3
+        patho_score_calc[variant] = calc_tier3
+        tier3_count <- tier3_count + 1
+      } else {
+        patho_score[variant] = score_tier4
+        patho_score_calc[variant] = calc_tier4
+        tier4_count <- tier4_count + 1
+      }
+    }
+  }
+  cat("Number of non-zero patho_score values:", sum(patho_score != 0), "\n")
+  cat("Tier 1 variants:", tier1_count, "\n")
+  cat("Tier 2 variants:", tier2_count, "\n")
+  cat("Tier 3 variants:", tier3_count, "\n")
+  cat("Tier 4 variants:", tier4_count, "\n")
+
+  seqAddValue(aGDS, "annotation/info/patho_score", patho_score, replace = TRUE)
+  seqAddValue(aGDS, "annotation/info/patho_score_calc", patho_score_calc, replace = TRUE)
+  seqResetFilter(aGDS)
+
+  sample_ids <- seqGetData(aGDS, "sample.id")
+  for (sample_index in 1:5) {
+    seqSetFilter(aGDS, sample.id = sample_ids[sample_index])
+    genotypes <- seqGetData(aGDS, "genotype")
+    valid_variants <- which(!is.na(genotypes[1, 1, ]) & !is.na(genotypes[2, 1, ]))
+    seqSetFilter(aGDS, variant.id = valid_variants)
+    patho_scores <- seqGetData(aGDS, "annotation/info/patho_score")
+    top_variants_indices <- order(patho_scores, decreasing = TRUE)[1:1000]
+    top_variant_ids <- valid_variants[top_variants_indices]
+    new_gdsfile <- paste0("S", sample_index, "_", gdsfile)
+    seqSetFilter(aGDS, variant.id = top_variant_ids)
+    seqExport(aGDS, new_gdsfile)
+    seqResetFilter(aGDS)
+    seqSetFilter(aGDS, sample.id = sample_ids[sample_index])
+    seqSetFilter(aGDS, variant.id = valid_variants)
+    all_variants <- which(patho_scores > 0)
+    all_variant_ids <- valid_variants[all_variants]
+    seqSetFilter(aGDS, variant.id = all_variant_ids)
+    all_gdsfile <- paste0("S", sample_index, "_All_", gdsfile)
+    seqExport(aGDS, all_gdsfile)
+    seqResetFilter(aGDS)
+  }
+  seqClose(aGDS)
+}
+
+# Main script
+main <- function() {
+  gds_files <- list.files(pattern = "favor_merged_.*\\.gds")
+  chr_list <- gsub("favor_merged_|*\\.gds", "", gds_files)
+  for (chr in chr_list) {
+    gdsfile <- paste0("favor_merged_", chr, ".gds")
+    if (!file.exists(gdsfile)) next
+    print(paste("Processing", gdsfile))
+    Open_Target_data <- read.table(gda_file, sep = "\t", header = TRUE)
+    new_gdsfile <- paste0(outprefix, chr, ".gds")
+    file.copy(gdsfile, new_gdsfile, overwrite = TRUE)
+    aGDS <- seqOpen(new_gdsfile, readonly = FALSE)
+    seqResetFilter(aGDS)
+    score_variants(aGDS, Open_Target_data, outprefix, chr, gdsfile)
+  }
+}
+
+main()
+
+

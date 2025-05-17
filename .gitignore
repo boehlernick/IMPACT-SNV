@@ -1,0 +1,29 @@
+# Byte-compiled / temporary files
+*.pyc
+*.pyo
+*.Rhistory
+*.RData
+*.Rproj.user
+__pycache__/
+.DS_Store
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+*.out
+*.aux
+*.toc
+*.gz
+*.zip
+*.tar.gz
+*.egg-info/
+# VSCode
+.vscode/
+# OS generated
+Thumbs.db
+ehthumbs.db
+Icon?
+# DNAnexus build artifacts
+*.app
+*.dxapp

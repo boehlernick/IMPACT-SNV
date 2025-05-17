@@ -1,0 +1,64 @@
+# IMPACT-SNV Pipeline
+
+This repository contains the full IMPACT-SNV branch of the IMPACT pipeline, which processes and prioritizes single nucleotide variants (SNVs) and indels for rare disease analysis. The repository unifies all steps required for SNV analysis, consistent with the structure of IMPACT-CNV and IMPACT-SV.
+
+## Pipeline Overview
+
+The pipeline consists of four main steps:
+
+1. **Step1_vcf2gds**: Converts VCF files to GDS format for efficient downstream processing.
+2. **Step2_vcf_merge**: Merges multiple VCF or VCF.GZ files into a single, chromosome-separated VCF.GZ file.
+3. **Step3_favorannotator-rap**: Functionally annotates GDS files using the FAVOR database, producing annotated GDS (AGDS) files.
+4. **Step4_IMPACT_prioritization**: Scores and prioritizes variants using gene-disease association data and functional scores.
+
+Each step is contained in its own subdirectory with detailed documentation and scripts.
+
+## Requirements
+- DNAnexus platform access
+- R (with Bioconductor packages: SeqArray, SeqVarTools, etc.)
+- Python 3 (for merging scripts)
+- BCFtools, bgzip, tabix (for VCF processing)
+
+See each step’s README for specific dependencies.
+
+## Usage
+
+### Step 1: VCF to GDS Conversion
+See `Step1_vcf2gds/README.md` for details. Example command:
+```sh
+dx run /path/to/install/apps/vcf2gds \
+  -ivcf_file=/path/to/vcf/file/to/convert/my.vcf.gz \
+  -igds_filename=my.gds \
+  --priority high \
+  -y
+```
+
+### Step 2: VCF Merge
+See `Step2_vcf_merge/Readme.md` for details. Example command:
+```sh
+dx run vcf_merge -ivcfs=input1.vcf.gz,input2.vcf.gz -o merged.vcf.gz
+```
+
+### Step 3: Functional Annotation
+See `Step3_favorannotator-rap/README.md` for details. Example command:
+```sh
+dx run favorannotator -igds=input.gds -o favor_merged_chr*.gds
+```
+
+### Step 4: Variant Prioritization
+See `Step4_IMPACT_prioritization/README.md` for details. Example command:
+```sh
+Rscript IMPACT-prioritization.r --gda GeneList.txt --outprefix anno_merged_
+```
+- `--gda` (optional): Path to gene-disease association file (default: `GeneList.txt`)
+- `--outprefix` (optional): Prefix for output GDS files (default: `anno_merged_`)
+
+## References
+- Original tools and documentation:
+  - [vcf2gds](https://github.com/drarwood/vcf2gds)
+  - [favorannotator-rap](https://github.com/li-lab-genetics/favorannotator-rap)
+- For more information, see the subdirectory READMEs.
+
+## Citation
+If you use this pipeline, please cite the relevant tools and the IMPACT pipeline publication [pending]
+
