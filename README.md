@@ -1,6 +1,5 @@
-# IMPACT-SNV Pipeline
-
-This repository contains the full IMPACT-SNV branch of the IMPACT pipeline, which processes and prioritizes single nucleotide variants (SNVs) and indels for rare disease analysis. The repository unifies all steps required for SNV analysis, consistent with the structure of IMPACT-CNV and IMPACT-SV.
+# IMPACT-SNV
+This repository contains the full IMPACT-SNV branch of the IMPACT pipeline, which processes and prioritizes single nucleotide variants (SNVs) and indels for rare disease analysis using the FAVOR database. 
 
 ## Pipeline Overview
 
@@ -14,10 +13,11 @@ The pipeline consists of four main steps:
 Each step is contained in its own subdirectory with detailed documentation and scripts.
 
 ## Requirements
-- DNAnexus platform access
 - R (with Bioconductor packages: SeqArray, SeqVarTools, etc.)
 - Python 3 (for merging scripts)
 - BCFtools, bgzip, tabix (for VCF processing)
+
+Note that these tools were made to be deployed on the DNAnexus Research Analysis platform.
 
 See each step’s README for specific dependencies.
 
