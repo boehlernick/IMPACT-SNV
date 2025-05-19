@@ -23,8 +23,14 @@ See each step’s README for specific dependencies.
 
 ## Usage
 
-### Step 1: VCF to GDS Conversion
-See `Step1_vcf2gds/README.md` for details. Example command:
+### Step 1: VCF Merge
+See `step1_vcf_merge/Readme.md` for details. Example command:
+```sh
+dx run vcf_merge -ivcfs=input1.vcf.gz,input2.vcf.gz -o merged.vcf.gz
+```
+
+### Step 2: VCF to GDS Conversion
+See `step2_vcf2gds/README.md` for details. Example command:
 ```sh
 dx run /path/to/install/apps/vcf2gds \
   -ivcf_file=/path/to/vcf/file/to/convert/my.vcf.gz \
@@ -33,20 +39,14 @@ dx run /path/to/install/apps/vcf2gds \
   -y
 ```
 
-### Step 2: VCF Merge
-See `Step2_vcf_merge/Readme.md` for details. Example command:
-```sh
-dx run vcf_merge -ivcfs=input1.vcf.gz,input2.vcf.gz -o merged.vcf.gz
-```
-
 ### Step 3: Functional Annotation
-See `Step3_favorannotator-rap/README.md` for details. Example command:
+See `step3_favorannotator-rap/README.md` for details. Example command:
 ```sh
 dx run favorannotator -igds=input.gds -o favor_merged_chr*.gds
 ```
 
 ### Step 4: Variant Prioritization
-See `Step4_IMPACT_prioritization/README.md` for details. Example command:
+See `step4_IMPACT_prioritization/README.md` for details. Example command:
 ```sh
 Rscript IMPACT-prioritization.r --gda GeneList.txt --outprefix anno_merged_
 ```
