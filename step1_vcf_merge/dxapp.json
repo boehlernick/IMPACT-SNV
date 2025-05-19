@@ -1,5 +1,5 @@
 {
-  "name": "impact_snv_indel_vcf_merge",
+  "name": "step1_vcf_merge",
   "title": "IMPACT SNV and InDel vcf merging",
   "summary": "Merges and annotates SNV and InDel vcf input files into chromosome-separated",
   "dxapi": "1.0.0",

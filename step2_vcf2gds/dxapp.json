@@ -1,5 +1,5 @@
 {
-  "name": "impact_vcf2gds",
+  "name": "step2_vcf2gds",
   "title": "IMPACT VCF to GDS Converter",
   "summary": "Converts VCF files to GDS Files for the IMPACT pipeline",
   "dxapi": "1.0.0",
