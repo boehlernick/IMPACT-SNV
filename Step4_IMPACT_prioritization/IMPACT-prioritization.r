@@ -2,16 +2,44 @@
 
 # IMPACT-SNV Variant Prioritization Script
 # Processes annotated GDS files and assigns pathogenicity scores and tiers to variants.
-# Usage: Rscript IMPACT-prioritization.r --gda GeneList.txt --outprefix anno_merged_
+# Usage: Rscript IMPACT-prioritization.R --gda GeneList.txt --outprefix anno_merged_
 
+# Argument parsing
 suppressPackageStartupMessages({
   if (!requireNamespace("optparse", quietly = TRUE)) install.packages("optparse")
   library(optparse)
+})
+
+option_list <- list(
+  make_option(c("-g", "--gda"), type = "character", default = "GeneList.txt",
+              help = "Gene-disease association file [default %default]"),
+  make_option(c("-o", "--outprefix"), type = "character", default = "anno_merged_",
+              help = "Output GDS file prefix [default %default]"),
+  make_option(c("-p", "--prefix"), type = "character", default = "merged_chr",
+              help = "Prefix for input GDS files [default %default]"),
+  make_option(c("--pattern"), type = "character", default = "merged_chr(.*)\\.gds",
+              help = "Regex pattern to extract chromosome from filenames [default %default]")
+)
+
+opt <- parse_args(OptionParser(option_list = option_list))
+gda_file <- opt$gda
+outprefix <- opt$outprefix
+prefix <- opt$prefix
+pattern <- opt$pattern
+
+# Check for matching files before loading packages
+gds_files <- list.files(pattern = paste0("^", prefix, ".*\\.gds$"))
+if (length(gds_files) == 0) {
+  stop(paste("No GDS files found matching prefix:", prefix))
+}
+
+# Load packages only if files are found
+suppressPackageStartupMessages({
   if (!requireNamespace("rlang", quietly = TRUE)) install.packages("rlang")
   if (!requireNamespace("cli", quietly = TRUE)) install.packages("cli")
   if (!requireNamespace("stringr", quietly = TRUE)) install.packages("stringr")
   if (!requireNamespace("readr", quietly = TRUE)) install.packages("readr")
-  if (!requireNamespace("BiocManager", quietly=TRUE)) install.packages("BiocManager")
+  if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
   BiocManager::install(c("SeqArray", "SeqVarTools"))
   library(rlang)
   library(cli)
@@ -23,15 +51,6 @@ suppressPackageStartupMessages({
   library(SeqVarTools)
   library(tidyr)
 })
-
-# Argument parsing
-option_list <- list(
-  make_option(c("-g", "--gda"), type="character", default="GeneList.txt", help="Gene-disease association file [default %default]"),
-  make_option(c("-o", "--outprefix"), type="character", default="anno_merged_", help="Output GDS file prefix [default %default]")
-)
-opt <- parse_args(OptionParser(option_list=option_list))
-gda_file <- opt$gda
-outprefix <- opt$outprefix
 
 # Utility functions
 extract_symbols <- function(entry) {
@@ -60,7 +79,7 @@ score_variants <- function(aGDS, Open_Target_data, outprefix, chr, gdsfile) {
     entry <- genecode_info[i]
     symbols <- extract_symbols(entry)
     if (!is.null(symbols)) {
-      cleaned_entry <- gsub("\\([^d][^i][^s][^t][^=]*\\)", "", entry)
+     cleaned_entry <- gsub("\\([^d][^i][^s][^t][^=]*\\)", "", entry)
       scores <- sapply(symbols, function(symbol) {
         if (any(matches_criteria(symbol, cleaned_entry))) {
           score <- Open_Target_data$globalScore[Open_Target_data$symbol == symbol]
@@ -146,24 +165,16 @@ score_variants <- function(aGDS, Open_Target_data, outprefix, chr, gdsfile) {
   seqResetFilter(aGDS)
 
   sample_ids <- seqGetData(aGDS, "sample.id")
-  for (sample_index in 1:5) {
-    seqSetFilter(aGDS, sample.id = sample_ids[sample_index])
+  for (sample_id in sample_ids) {
+    seqSetFilter(aGDS, sample.id = sample_id)
     genotypes <- seqGetData(aGDS, "genotype")
     valid_variants <- which(!is.na(genotypes[1, 1, ]) & !is.na(genotypes[2, 1, ]))
     seqSetFilter(aGDS, variant.id = valid_variants)
     patho_scores <- seqGetData(aGDS, "annotation/info/patho_score")
-    top_variants_indices <- order(patho_scores, decreasing = TRUE)[1:1000]
-    top_variant_ids <- valid_variants[top_variants_indices]
-    new_gdsfile <- paste0("S", sample_index, "_", gdsfile)
-    seqSetFilter(aGDS, variant.id = top_variant_ids)
-    seqExport(aGDS, new_gdsfile)
-    seqResetFilter(aGDS)
-    seqSetFilter(aGDS, sample.id = sample_ids[sample_index])
-    seqSetFilter(aGDS, variant.id = valid_variants)
     all_variants <- which(patho_scores > 0)
     all_variant_ids <- valid_variants[all_variants]
     seqSetFilter(aGDS, variant.id = all_variant_ids)
-    all_gdsfile <- paste0("S", sample_index, "_All_", gdsfile)
+    all_gdsfile <- paste0(sample_id, "_chr", chr, ".gds")
     seqExport(aGDS, all_gdsfile)
     seqResetFilter(aGDS)
   }
@@ -172,11 +183,16 @@ score_variants <- function(aGDS, Open_Target_data, outprefix, chr, gdsfile) {
 
 # Main script
 main <- function() {
-  gds_files <- list.files(pattern = "favor_merged_.*\\.gds")
-  chr_list <- gsub("favor_merged_|*\\.gds", "", gds_files)
-  for (chr in chr_list) {
-    gdsfile <- paste0("favor_merged_", chr, ".gds")
-    if (!file.exists(gdsfile)) next
+  gds_files <- list.files(pattern = paste0("^", prefix, ".*\\.gds$"))
+  chr_list <- sapply(gds_files, function(f) {
+    matches <- regexec(pattern, f)
+    match <- regmatches(f, matches)[[1]]
+    if (length(match) > 1) return(match[2]) else return(NA)
+  })
+  names(gds_files) <- chr_list
+
+  for (chr in chr_list[!is.na(chr_list)]) {
+    gdsfile <- gds_files[[chr]]
     print(paste("Processing", gdsfile))
     Open_Target_data <- read.table(gda_file, sep = "\t", header = TRUE)
     new_gdsfile <- paste0(outprefix, chr, ".gds")
@@ -188,5 +204,3 @@ main <- function() {
 }
 
 main()
-
-
