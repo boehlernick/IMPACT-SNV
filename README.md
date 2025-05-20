@@ -3,12 +3,12 @@ This repository contains the full IMPACT-SNV branch of the IMPACT pipeline, whic
 
 ## Pipeline Overview
 
-The pipeline consists of four main steps:
+The pipeline consists of four main steps, each available as a DNAnexus applet:
 
 1. **Step1_vcf2gds**: Converts VCF files to GDS format for efficient downstream processing.
 2. **Step2_vcf_merge**: Merges multiple VCF or VCF.GZ files into a single, chromosome-separated VCF.GZ file.
 3. **Step3_favorannotator-rap**: Functionally annotates GDS files using the FAVOR database, producing annotated GDS (AGDS) files.
-4. **Step4_IMPACT_prioritization**: Scores and prioritizes variants using gene-disease association data and functional scores.
+4. **Step4_impact_prioritization**: Scores and prioritizes variants using gene-disease association data and functional scores. Outputs per-sample SNV_IMPACT.gds files. Now available as a DNAnexus applet with robust scoring, tiering, and merging features.
 
 Each step is contained in its own subdirectory with detailed documentation and scripts.
 
@@ -45,13 +45,14 @@ See `step3_favorannotator-rap/README.md` for details. Example command:
 dx run favorannotator -igds=input.gds -o favor_merged_chr*.gds
 ```
 
-### Step 4: Variant Prioritization
-See `step4_IMPACT_prioritization/README.md` for details. Example command:
+### Step 4: Variant Prioritization (New DNAnexus Applet)
+See `step4_impact_prioritization/README.md` for details. Example command:
 ```sh
-Rscript IMPACT-prioritization.r --gda GeneList.txt --outprefix anno_merged_
+dx run step4_impact_prioritization -igda=GeneList.txt -igds_files=favor_merged_chr1.gds,favor_merged_chr2.gds,...
 ```
-- `--gda` (optional): Path to gene-disease association file (default: `GeneList.txt`)
+- `--genelist` (optional): Path to gene-disease association file (default: `GeneList.txt`)
 - `--outprefix` (optional): Prefix for output GDS files (default: `anno_merged_`)
+- Outputs: All `<sample_id>_SNV_IMPACT.gds` files
 
 ## References
 - Original tools and documentation:

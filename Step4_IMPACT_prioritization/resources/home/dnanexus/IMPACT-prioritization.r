@@ -1,8 +1,11 @@
 #!/usr/bin/env Rscript
 
+# Set CRAN mirror for non-interactive environments
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
 # IMPACT-SNV Variant Prioritization Script
 # Processes annotated GDS files and assigns pathogenicity scores and tiers to variants.
-# Usage: Rscript IMPACT-prioritization.r --gda GeneList.txt --outprefix anno_merged_
+# Usage: Rscript IMPACT-prioritization.r --genelist GeneList.txt --outprefix anno_merged_
 
 # Argument parsing
 suppressPackageStartupMessages({
@@ -11,7 +14,7 @@ suppressPackageStartupMessages({
 })
 
 option_list <- list(
-  make_option(c("-g", "--gda"), type = "character", default = "GeneList.txt",
+  make_option(c("-g", "--genelist"), type = "character", default = "GeneList.txt",
               help = "Gene-disease association file [default %default]"),
   make_option(c("-o", "--outprefix"), type = "character", default = "anno_merged_",
               help = "Output GDS file prefix [default %default]"),
@@ -22,16 +25,27 @@ option_list <- list(
 )
 
 opt <- parse_args(OptionParser(option_list = option_list))
-gda_file <- opt$gda
+gda_file <- opt$genelist
 outprefix <- opt$outprefix
 prefix <- opt$prefix
 pattern <- opt$pattern
 
 # Check for matching files before loading packages
-gds_files <- list.files(pattern = paste0("^", prefix, ".*\\.gds$"))
+
+
+gds_files <- list.files(path = "in", pattern = "^merged_chr.*\\.gds$", recursive = TRUE, full.names = TRUE)
 if (length(gds_files) == 0) {
   stop(paste("No GDS files found matching prefix:", prefix))
 }
+
+genelist_path <- list.files(path = "in", pattern = "GeneList.txt$", recursive = TRUE, full.names = TRUE)
+
+if (length(genelist_path) == 0) {
+  stop("GeneList.txt not found in input directory.")
+}
+Open_Target_data <- read.table(genelist_path[1], sep = "\t", header = TRUE)
+
+
 
 # Load packages only if files are found
 suppressPackageStartupMessages({
@@ -137,7 +151,6 @@ score_variants <- function(aGDS, Open_Target_data, outprefix, chr, gdsfile) {
         calc_tier3 = paste("Tier 3 = 20 + 80 *", global_score_vector[variant])
       }
       if (variant %in% valid_indices && apc_protein_values[which(valid_indices == variant)] > 1) {
-        index <- which(valid_indices == variant)
         score_tier4 = 100 * ((0.5 * normalized_apc_protein_values[variant] + 0.5 * global_score_vector[variant]))
         calc_tier4 = paste("Tier 4 = 100 * ((0.5 *", normalized_apc_protein_values[variant], "+ 0.5 *", global_score_vector[variant], "))")
       }
@@ -209,7 +222,7 @@ main <- function() {
   for (chr in chr_list[!is.na(chr_list)]) {
     gdsfile <- gds_files[[chr]]
     print(paste("Processing", gdsfile))
-    Open_Target_data <- read.table(gda_file, sep = "\t", header = TRUE)
+    Open_Target_data <- read.table(genelist_path[1], sep = "\t", header = TRUE)
     new_gdsfile <- paste0(outprefix, chr, ".gds")
     file.copy(gdsfile, new_gdsfile, overwrite = TRUE)
     aGDS <- seqOpen(new_gdsfile, readonly = FALSE)

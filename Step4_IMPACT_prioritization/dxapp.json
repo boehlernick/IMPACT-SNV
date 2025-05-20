@@ -1,0 +1,59 @@
+{
+  "name": "step4_impact_prioritization",
+  "title": "IMPACT-SNV Step 4: Variant Prioritization",
+  "summary": "Prioritize variants in annotated GDS files using gene-disease association and functional scores.",
+  "description": "Scores and prioritizes variants in annotated GDS files using gene-disease association data and functional scores. Outputs per-sample SNV_IMPACT.gds files.",
+  "dxapi": "1.0.0",
+  "version": "1.0.0",
+  "inputSpec": [
+    {
+      "name": "genelist",
+      "label": "Gene-disease association file from Open Targets",
+      "class": "file",
+      "patterns": ["*.txt"],
+      "optional": false
+    },
+    {
+      "name": "gds_files",
+      "label": "Annotated GDS files from favorannotator",
+      "class": "array:file",
+      "patterns": ["*.gds"],
+      "optional": false
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "snv_impact_gds",
+      "label": "SNV IMPACT GDS files",
+      "class": "array:file",
+      "patterns": ["*_SNV_IMPACT.gds"]
+    }
+  ],
+  "runSpec": {
+    "timeoutPolicy": {
+      "*": {
+        "hours": 360
+      }
+    },
+    "interpreter": "bash",
+    "file": "src/code.sh",
+    "distribution": "Ubuntu",
+    "release": "24.04",
+    "version": "0"
+  },
+    "access": {
+    "network": [
+      "*"
+    ]
+  },
+    "ignoreReuse": false,
+  "regionalOptions": {
+    "aws:eu-west-2": {
+      "systemRequirements": {
+        "*": {
+          "instanceType": "mem1_ssd1_v2_x16"
+        }
+      }
+    }
+  }
+}
