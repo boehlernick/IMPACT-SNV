@@ -2,7 +2,7 @@
 
 # IMPACT-SNV Variant Prioritization Script
 # Processes annotated GDS files and assigns pathogenicity scores and tiers to variants.
-# Usage: Rscript IMPACT-prioritization.R --gda GeneList.txt --outprefix anno_merged_
+# Usage: Rscript IMPACT-prioritization.r --gda GeneList.txt --outprefix anno_merged_
 
 # Argument parsing
 suppressPackageStartupMessages({
@@ -163,21 +163,36 @@ score_variants <- function(aGDS, Open_Target_data, outprefix, chr, gdsfile) {
   seqAddValue(aGDS, "annotation/info/patho_score", patho_score, replace = TRUE)
   seqAddValue(aGDS, "annotation/info/patho_score_calc", patho_score_calc, replace = TRUE)
   seqResetFilter(aGDS)
+                                                            
+                                                               
+sample_ids <- seqGetData(aGDS, "sample.id")
+for (sample_id in sample_ids) {
+  # Filter to the current sample
+  seqSetFilter(aGDS, sample.id = sample_id)
 
-  sample_ids <- seqGetData(aGDS, "sample.id")
-  for (sample_id in sample_ids) {
-    seqSetFilter(aGDS, sample.id = sample_id)
-    genotypes <- seqGetData(aGDS, "genotype")
-    valid_variants <- which(!is.na(genotypes[1, 1, ]) & !is.na(genotypes[2, 1, ]))
-    seqSetFilter(aGDS, variant.id = valid_variants)
-    patho_scores <- seqGetData(aGDS, "annotation/info/patho_score")
-    all_variants <- which(patho_scores > 0)
-    all_variant_ids <- valid_variants[all_variants]
-    seqSetFilter(aGDS, variant.id = all_variant_ids)
-    all_gdsfile <- paste0(sample_id, "_chr", chr, ".gds")
-    seqExport(aGDS, all_gdsfile)
-    seqResetFilter(aGDS)
-  }
+  # Get genotype matrix for the current sample
+  genotypes <- seqGetData(aGDS, "genotype")
+
+  # Determine valid variants for this sample
+  valid_variants <- which(!is.na(genotypes[1, 1, ]) | !is.na(genotypes[2, 1, ]))
+
+  # Get patho scores and filter to non-zero ones
+  patho_scores <- seqGetData(aGDS, "annotation/info/patho_score")
+  all_variants <- which(patho_scores > 0)
+  all_variant_ids <- intersect(valid_variants, all_variants)
+
+  # Apply final filter
+  seqSetFilter(aGDS, sample.id = sample_id, variant.id = all_variant_ids)
+
+  # Export to sample-specific chromosome file
+  all_gdsfile <- paste0(sample_id, "_chr", chr, ".gds")
+  seqExport(aGDS, all_gdsfile)
+
+  # Reset filter
+  seqResetFilter(aGDS)
+}
+
+
   seqClose(aGDS)
 }
 
@@ -204,3 +219,35 @@ main <- function() {
 }
 
 main()
+                                                                     
+                                                               
+merge_sample_gds_files <- function() {
+  library(SeqArray)
+
+  # List all GDS files that match the expected chromosome pattern
+  gds_files <- list.files(pattern = ".*_chr[0-9XYM]+\\.gds$")
+
+  # Extract sample IDs by removing the chromosome suffix
+  sample_ids <- unique(sub("_chr[0-9XYM]+\\.gds$", "", gds_files))
+
+  # Exclude generic or pipeline-generated prefixes
+  sample_ids <- sample_ids[!sample_ids %in% c("merged", "anno_merged")]
+
+  merge_sample_files <- function(sample_id) {
+    sample_files <- list.files(pattern = paste0("^", sample_id, "_chr[0-9XYM]+\\.gds$"))
+    if (length(sample_files) > 0) {
+      merged_file <- paste0(sample_id, "_SNV_IMPACT.gds")
+      message("Merging files for sample: ", sample_id)
+      seqMerge(sample_files, merged_file, verbose = TRUE)
+    } else {
+      message("No files found for sample: ", sample_id)
+    }
+  }
+
+  for (sample_id in sample_ids) {
+    merge_sample_files(sample_id)
+  }
+}
+
+# Run the function
+merge_sample_gds_files()
