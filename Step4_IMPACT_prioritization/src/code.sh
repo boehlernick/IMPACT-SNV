@@ -4,11 +4,12 @@ set -euo pipefail
 # DNAnexus applet entrypoint for IMPACT-prioritization
 # Inputs: $genelist (GeneList.txt), $gds_files (array of .gds files)
 
-# Copy inputs to working directory
-dx-download-all-inputs
+# download inputs to working directory
+dx download "$genelist"   -o GeneList.txt
+for file in "${gds_files[@]}"; do
+  dx download "$file" -o .
+done
 
-# Move all downloaded inputs into the working directory
-find . -type f -not -path "./*" -exec mv {} . \;
 
 # Confirm R version
 R --version
