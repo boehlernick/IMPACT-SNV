@@ -221,9 +221,9 @@ score_variants <- function(aGDS, Open_Target_data, outprefix, chr, gdsfile) {
   seqClose(aGDS)
 }
 
-# Main script
-main <- function() {
-  cat("Main function started...\n")
+# run_chr_level script
+run_chr_level <- function() {
+  cat("run_chr_level function started...\n")
   gds_files <- list.files(pattern = paste0("^", prefix, ".*\\.gds$"))
   chr_list <- sapply(gds_files, function(f) {
     matches <- regexec(pattern, f)
@@ -250,9 +250,7 @@ main <- function() {
   file.copy(list.files(pattern = "_chr[0-9XYM]+\\.gds$"), "out", overwrite = TRUE)
 }
 
-main()
-
-merge_sample_gds_files <- function() {
+run_sample_merge <- function() {
   library(SeqArray)
 
   # Ensure output directory exists
@@ -286,5 +284,11 @@ merge_sample_gds_files <- function() {
   }
 }
 
-# Run the function
-merge_sample_gds_files()
+main <- function() {
+  run_chr_level()
+  run_sample_merge()
+}
+
+if (sys.nframe() == 0) {
+  main()
+}
