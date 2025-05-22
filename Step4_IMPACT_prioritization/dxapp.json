@@ -27,6 +27,12 @@
       "label": "SNV IMPACT GDS files",
       "class": "array:file",
       "patterns": ["*_SNV_IMPACT.gds"]
+    },
+    {
+      "name": "log_file",
+      "label": "IMPACT Prioritization Log",
+      "class": "file",
+      "patterns": ["impact_prioritization.log"]
     }
   ],
   "runSpec": {
@@ -41,12 +47,12 @@
     "release": "24.04",
     "version": "0"
   },
-    "access": {
+  "access": {
     "network": [
       "*"
     ]
   },
-    "ignoreReuse": false,
+  "ignoreReuse": false,
   "regionalOptions": {
     "aws:eu-west-2": {
       "systemRequirements": {

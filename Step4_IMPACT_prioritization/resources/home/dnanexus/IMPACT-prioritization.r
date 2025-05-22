@@ -1,4 +1,3 @@
-
 #!/usr/bin/env Rscript
 
 # Set CRAN mirror for non-interactive environments
@@ -58,27 +57,60 @@ stop("GeneList.txt not found in input directory.")
 }
 Open_Target_data <- read.table(genelist_path[1], sep = "\t", header = TRUE)
 
-# Load packages only if files are found
+# Quietly install CRAN packages
+quiet_install <- function(pkg) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    tryCatch(
+      {
+        install.packages(pkg, quiet = TRUE, verbose = FALSE)
+      },
+      error = function(e) {
+        message(sprintf("Failed to install package '%s': %s", pkg, e$message))
+        stop(e)
+      }
+    )
+  }
+}
+
+# Quietly install Bioconductor packages
+quiet_bioc_install <- function(pkgs) {
+  if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager", quiet = TRUE, verbose = FALSE)
+  }
+  for (pkg in pkgs) {
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      tryCatch(
+        {
+          BiocManager::install(pkg, ask = FALSE, update = FALSE, quiet = TRUE)
+        },
+        error = function(e) {
+          message(sprintf("Failed to install Bioconductor package '%s': %s", pkg, e$message))
+          stop(e)
+        }
+      )
+    }
+  }
+}
+
 suppressPackageStartupMessages({
-if (!requireNamespace("rlang", quietly = TRUE)) install.packages("rlang")
-if (!requireNamespace("cli", quietly = TRUE)) install.packages("cli")
-if (!requireNamespace("stringr", quietly = TRUE)) install.packages("stringr")
-if (!requireNamespace("readr", quietly = TRUE)) install.packages("readr")
-if (!requireNamespace("digest", quietly = TRUE)) install.packages("digest")
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install(c("SeqArray", "SeqVarTools"))
-library(rlang)
-library(cli)
-library(dplyr)
-library(stringr)
-library(parallel)
-library(readr)
-library(digest)
-library(SeqArray)
-library(SeqVarTools)
-library(tidyr)
+  quiet_install("rlang")
+  quiet_install("cli")
+  quiet_install("stringr")
+  quiet_install("readr")
+  quiet_install("digest")
+  quiet_bioc_install(c("SeqArray", "SeqVarTools"))
+  library(rlang)
+  library(cli)
+  library(dplyr)
+  library(stringr)
+  library(parallel)
+  library(readr)
+  library(digest)
+  library(SeqArray)
+  library(SeqVarTools)
+  library(tidyr)
 })
+
 
 # Utility functions
 extract_symbols <- function(entry) {
@@ -285,8 +317,14 @@ run_sample_merge <- function() {
 }
 
 main <- function() {
+  log_file <- file.path("out", "impact_prioritization.log")
+  dir.create("out", showWarnings = FALSE)
+  sink(log_file, split = TRUE)
+  cat("IMPACT-prioritization run started at:", as.character(Sys.time()), "\n")
   run_chr_level()
   run_sample_merge()
+  cat("IMPACT-prioritization run finished at:", as.character(Sys.time()), "\n")
+  sink()
 }
 
 if (sys.nframe() == 0) {
