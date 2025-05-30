@@ -247,38 +247,216 @@ anno_file_name_1 <- "Anno_chr"
 anno_file_name_2 <- "_STAARpipeline.csv"
 
 
-### Define column types (Some columns can be misinterpreted for some chromosomes depending on sample input)
+### Hard-coded column types for FAVOR annotation columns
 column_types <- cols(
-  aloft_description = col_character(),
+  VarInfo = col_character(),
+  vid = col_double(),
+  variant_vcf = col_character(),
+  variant_annovar = col_character(),
+  chromosome = col_double(),
+  start_position = col_double(),
+  end_position = col_double(),
+  ref_annovar = col_character(),
+  alt_annovar = col_character(),
+  position = col_character(),
+  ref_vcf = col_character(),
+  alt_vcf = col_character(),
   aloft_value = col_double(),
-  metasvm_pred = col_character(), 
+  aloft_description = col_character(),
+  apc_conservation = col_double(),
+  apc_conservation_v2 = col_double(),
+  apc_epigenetics_active = col_double(),
+  apc_epigenetics = col_double(),
+  apc_epigenetics_repressed = col_double(),
+  apc_epigenetics_transcription = col_double(),
+  apc_local_nucleotide_diversity = col_double(),
+  apc_local_nucleotide_diversity_v2 = col_double(),
+  apc_local_nucleotide_diversity_v3 = col_double(),
+  apc_mappability = col_double(),
+  apc_micro_rna = col_double(),
+  apc_mutation_density = col_double(),
+  apc_protein_function = col_double(),
+  apc_protein_function_v2 = col_double(),
+  apc_protein_function_v3 = col_double(),
+  apc_proximity_to_coding = col_double(),
+  apc_proximity_to_coding_v2 = col_double(),
+  apc_proximity_to_tsstes = col_double(),
+  apc_transcription_factor = col_double(),
+  bravo_an = col_character(),
+  bravo_af = col_character(),
+  filter_status = col_character(),
+  cage_enhancer = col_character(),
+  cage_promoter = col_character(),
+  cage_tc = col_character(),
   clnsig = col_character(),
   clnsigincl = col_character(),
   clndn = col_character(),
   clndnincl = col_character(),
   clnrevstat = col_character(),
+  origin = col_character(),
   clndisdb = col_character(),
   clndisdbincl = col_character(),
   geneinfo = col_character(),
+  polyphen2_hdiv_score = col_double(),
+  polyphen2_hvar_score = col_double(),
+  mutation_taster_score = col_double(),
+  mutation_assessor_score = col_double(),
+  metasvm_pred = col_character(),
+  fathmm_xf = col_double(),
+  funseq_value = col_double(),
+  funseq_description = col_character(),
+  genecode_comprehensive_category = col_character(),
+  genecode_comprehensive_info = col_character(),
+  genecode_comprehensive_exonic_category = col_character(),
+  genecode_comprehensive_exonic_info = col_character(),
+  genehancer = col_character(),
+  af_total = col_double(),
+  af_asj_female = col_double(),
+  af_eas_female = col_double(),
+  af_afr_male = col_double(),
+  af_female = col_double(),
+  af_fin_male = col_double(),
+  af_oth_female = col_double(),
+  af_ami = col_double(),
+  af_oth = col_double(),
+  af_male = col_double(),
+  af_ami_female = col_double(),
+  af_afr = col_double(),
+  af_eas_male = col_double(),
+  af_sas = col_double(),
+  af_nfe_female = col_double(),
+  af_asj_male = col_double(),
+  af_raw = col_double(),
+  af_oth_male = col_double(),
+  af_nfe_male = col_double(),
+  af_asj = col_double(),
+  af_amr_male = col_double(),
+  af_amr_female = col_double(),
+  af_sas_female = col_double(),
+  af_fin = col_double(),
+  af_afr_female = col_double(),
+  af_sas_male = col_double(),
+  af_amr = col_double(),
+  af_nfe = col_double(),
+  af_eas = col_double(),
+  af_ami_male = col_double(),
+  af_fin_female = col_double(),
+  linsight = col_double(),
+  gc = col_double(),
+  cpg = col_double(),
+  min_dist_tss = col_double(),
+  min_dist_tse = col_double(),
+  sift_cat = col_character(),
+  sift_val = col_double(),
+  polyphen_cat = col_character(),
+  polyphen_val = col_double(),
+  priphcons = col_double(),
+  mamphcons = col_double(),
+  verphcons = col_double(),
+  priphylop = col_double(),
+  mamphylop = col_double(),
+  verphylop = col_double(),
+  bstatistic = col_double(),
+  chmm_e1 = col_double(),
+  chmm_e2 = col_double(),
+  chmm_e3 = col_double(),
+  chmm_e4 = col_double(),
+  chmm_e5 = col_double(),
+  chmm_e6 = col_double(),
+  chmm_e7 = col_double(),
+  chmm_e8 = col_double(),
+  chmm_e9 = col_double(),
+  chmm_e10 = col_double(),
+  chmm_e11 = col_double(),
+  chmm_e12 = col_double(),
+  chmm_e13 = col_double(),
+  chmm_e14 = col_double(),
+  chmm_e15 = col_double(),
+  chmm_e16 = col_double(),
+  chmm_e17 = col_double(),
+  chmm_e18 = col_double(),
+  chmm_e19 = col_double(),
+  chmm_e20 = col_double(),
+  chmm_e21 = col_double(),
+  chmm_e22 = col_double(),
+  chmm_e23 = col_double(),
+  chmm_e24 = col_double(),
+  chmm_e25 = col_double(),
+  gerp_rs = col_double(),
+  gerp_rs_pval = col_double(),
+  gerp_n = col_double(),
+  gerp_s = col_double(),
+  encodeh3k4me1_sum = col_double(),
+  encodeh3k4me2_sum = col_double(),
+  encodeh3k4me3_sum = col_double(),
+  encodeh3k9ac_sum = col_double(),
+  encodeh3k9me3_sum = col_double(),
+  encodeh3k27ac_sum = col_double(),
+  encodeh3k27me3_sum = col_double(),
+  encodeh3k36me3_sum = col_double(),
+  encodeh3k79me2_sum = col_double(),
+  encodeh4k20me1_sum = col_double(),
+  encodeh2afz_sum = col_double(),
+  encode_dnase_sum = col_double(),
+  encodetotal_rna_sum = col_double(),
+  grantham = col_double(),
+  freq100bp = col_double(),
+  rare100bp = col_double(),
+  sngl100bp = col_double(),
+  freq1000bp = col_double(),
+  rare1000bp = col_double(),
+  sngl1000bp = col_double(),
+  freq10000bp = col_double(),
+  rare10000bp = col_double(),
+  sngl10000bp = col_double(),
+  remap_overlap_tf = col_double(),
+  remap_overlap_cl = col_double(),
+  cadd_rawscore = col_double(),
+  cadd_phred = col_double(),
+  k24_bismap = col_double(),
+  k24_umap = col_double(),
+  k36_bismap = col_double(),
+  k36_umap = col_double(),
+  k50_bismap = col_double(),
+  k50_umap = col_double(),
+  k100_bismap = col_double(),
+  k100_umap = col_double(),
+  nucdiv = col_double(),
+  rdhs = col_character(),
+  recombination_rate = col_double(),
   refseq_category = col_character(),
-  origin = col_character(),
   refseq_info = col_character(),
-  sift_cat = col_character(),          # Column 98
-  sift_val = col_double(),             # Column 99
-  polyphen_cat = col_character(),      # Column 100
-  polyphen_val = col_double(),         # Column 101
-  grantham = col_double(),             # Column 151
-  polyphen2_hdiv_score = col_double(), # Column 49
-  polyphen2_hvar_score = col_double(), # Column 50
-  mutation_assessor_score = col_double(), # Column 52
-  mutation_taster_score = col_double() # Column 51
+  refseq_exonic_category = col_character(),
+  refseq_exonic_info = col_character(),
+  super_enhancer = col_character(),
+  tg_afr = col_double(),
+  tg_all = col_double(),
+  tg_amr = col_double(),
+  tg_eas = col_double(),
+  tg_eur = col_double(),
+  tg_sas = col_double(),
+  ucsc_category = col_character(),
+  ucsc_info = col_character(),
+  ucsc_exonic_category = col_character(),
+  ucsc_exonic_info = col_character()
 )
+
+# Function to update column_types for problematic columns
+update_column_types_to_character <- function(column_types, problem_cols) {
+  for (col in problem_cols) {
+    column_types[[col]] <- col_character()
+  }
+  return(column_types)
+}
 
 ### Read annotation data with specific column types
 message("Reading annotation data for chr", chr)
+anno_csv_path <- paste0(dir_anno, "chr", chr, "/", anno_file_name_1, chr, anno_file_name_2)
+
+# Initial read
 FunctionalAnnotation <- tryCatch(
   {
-    read_csv(paste0(dir_anno, "chr", chr, "/", anno_file_name_1, chr, anno_file_name_2), col_types = column_types)
+    read_csv(anno_csv_path, col_types = column_types)
   },
   error = function(e) {
     message("Error reading annotation data: ", e)
@@ -286,13 +464,24 @@ FunctionalAnnotation <- tryCatch(
   }
 )
 
-# Check for parsing issues
+# Check for parsing issues and fix them automatically
 parsing_problems <- problems(FunctionalAnnotation)
-print(parsing_problems)
-
 if (nrow(parsing_problems) > 0) {
-  message("Parsing problems detected. Logging the issues:")
-  print(parsing_problems)  # Log parsing problems for debugging
+  message("Parsing problems detected. Attempting to fix by converting problematic columns to string:")
+  problem_cols <- unique(parsing_problems$col)
+  for (col in problem_cols) {
+    colname <- names(FunctionalAnnotation)[as.integer(col)]
+    warning(sprintf("Column '%s' (index %s) has parsing issues and will be forced to string.", colname, col))
+  }
+  # Update column_types for problematic columns
+  new_column_types <- update_column_types_to_character(column_types, as.integer(problem_cols))
+  # Re-read with updated column_types
+  FunctionalAnnotation <- read_csv(anno_csv_path, col_types = new_column_types)
+  # Check again for parsing problems
+  parsing_problems <- problems(FunctionalAnnotation)
+  if (nrow(parsing_problems) > 0) {
+    stop("Parsing problems remain after forcing problematic columns to string. Please check the input file.")
+  }
 } else {
   message("No parsing issues detected.")
 }
@@ -306,15 +495,17 @@ if (length(warning_check) > 0) {
   message("No warnings detected.")
 }
 
-# Convert aloft_description to character (string) if needed again
-FunctionalAnnotation$aloft_description <- as.character(FunctionalAnnotation$aloft_description)
-
 
 ## Open GDS
 message("Opening GDS file for writing annotation.")
 genofile <- seqOpen(gds.file, readonly = FALSE)
 
 Anno.folder <- index.gdsn(genofile, "annotation/info")
+
+# Before adding FunctionalAnnotation to GDS, check if node exists and delete if so
+if ("FunctionalAnnotation" %in% ls.gdsn(Anno.folder)) {
+  delete.gdsn(index.gdsn(Anno.folder, "FunctionalAnnotation"))
+}
 
 # Add FunctionalAnnotation to GDS
 if (use_compression == "YES") {
