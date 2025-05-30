@@ -13,6 +13,7 @@
 import os
 import subprocess
 import dxpy
+import gzip
 from concurrent.futures import ThreadPoolExecutor
 
 def find_bcftools_path():
@@ -60,15 +61,33 @@ def check_vcf_headers(vcf_file, bcftools_path):
     except subprocess.CalledProcessError as e:
         print(f"Error: BCFtools view command failed with exit code {e.returncode}")
 
+
 def remove_format_variables(vcf_file, bcftools_path):
-    cleaned_vcf = f"cleaned_{vcf_file}"
+
+    open_func = gzip.open if vcf_file.endswith('.gz') else open
+    with open_func(vcf_file, 'rt') as fin:
+        for line in fin:
+            if line.startswith('#CHROM'):
+                columns = line.strip().split('\t')
+                if len(columns) > 8 and columns[8] == 'GT':
+                    print(f"{vcf_file} already only has GT FORMAT. Skipping annotate.")
+                    return vcf_file
+                break
+
+    cleaned_vcf = f"cleaned_{os.path.basename(vcf_file)}"
     try:
-        subprocess.run([bcftools_path, 'annotate', '-x', '^FORMAT/GT', vcf_file, '-Oz', '-o', cleaned_vcf], check=True)
+        subprocess.run([
+            bcftools_path, 'annotate',
+            '-x', 'FORMAT,^GT',
+            vcf_file, '-Oz', '-o', cleaned_vcf
+        ], check=True)
         print(f"Cleaned VCF file saved as: {cleaned_vcf}")
         return cleaned_vcf
     except subprocess.CalledProcessError as e:
         print(f"Error: BCFtools annotate command failed with exit code {e.returncode}")
         return None
+
+
 
 def index_vcf_file(vcf_file, bcftools_path):
     try:
@@ -112,6 +131,14 @@ def split_vcf_by_chromosome(merged_vcf, bcftools_path):
             return None
     return split_vcf_files
 
+def ensure_bgzipped(vcf_file, bgzip_path):
+    if vcf_file.endswith('.vcf.gz'):
+        return vcf_file
+    gzipped_vcf = vcf_file + '.gz'
+    subprocess.run([bgzip_path, vcf_file], check=True)
+    print(f"Compressed {vcf_file} to {gzipped_vcf}")
+    return gzipped_vcf
+
 @dxpy.entry_point('main')
 def main(input_vcfs, reference_genome, **kwargs):
     index_files = kwargs.get('index_files', None)
@@ -119,7 +146,12 @@ def main(input_vcfs, reference_genome, **kwargs):
     input_vcf_files = []
     for i, file in enumerate(input_vcfs):
         file_id = file['$dnanexus_link'] if isinstance(file, dict) else file
-        local_filename = f"input_{i}.vcf.gz"
+        # Download with original filename
+        orig_name = file.get('name') if isinstance(file, dict) and 'name' in file else None
+        if orig_name:
+            local_filename = f"input_{i}_" + orig_name
+        else:
+            local_filename = f"input_{i}.vcf"
         subprocess.run(['dx', 'download', file_id, '-o', local_filename], check=True)
         input_vcf_files.append(local_filename)
     
@@ -142,9 +174,13 @@ def main(input_vcfs, reference_genome, **kwargs):
             print("Installation of tabix failed. Exiting.")
             return
         bgzip_path = find_bgzip_path()
-    
+
     if bgzip_path is None:
         raise RuntimeError("bgzip executable not found after installation.")
+
+    # Ensure all input VCFs are bgzipped before indexing
+    input_vcf_files = [ensure_bgzipped(vcf, bgzip_path) for vcf in input_vcf_files]
+
     
     if index_files:
         print("Optional index files detected. Using provided index files.")
