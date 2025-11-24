@@ -27,3 +27,5 @@ Icon?
 # DNAnexus build artifacts
 *.app
 *.dxapp
+IMPACT-SNV-repomix-output.xml
+.Rproj.user
