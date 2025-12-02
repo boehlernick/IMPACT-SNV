@@ -64,6 +64,16 @@
       "*": {
         "hours": 48
       }
+      
+  "execDepends": [
+    { "name": "dx-docker" }
+  ],
+  "distribution": "Ubuntu",
+  "release": "22.04",
+  "file": "code.sh",
+  "interpreter": "bash",
+  "dockerImage": "<your-dockerhub-username>/impact-step1:1.0.0"
+
     },
     "interpreter": "python3",
     "file": "src/IMPACT_SNV_indel.py",
