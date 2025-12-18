@@ -10,7 +10,7 @@ https://documentation.dnanexus.com/.
 
 ## Overview
 
-The IMPACT SNV and InDel VCF Processing app is designed to merge multiple VCF or VCF.GZ files containing Single Nucleotide Variants (SNVs) and Insertions/Deletions (InDels) into a single, compressed VCF.GZ file. This app is particularly useful for genomic researchers and bioinformaticians who need to consolidate variant data from multiple samples.
+The IMPACT SNV and InDel VCF Processing app is designed to merge multiple VCF or VCF.GZ files containing Single Nucleotide Variants (SNVs) and Insertions/Deletions (InDels) into a single, compressed VCF.GZ file. This app leverages BCFtools for efficient merging and formatting of the input files, ensuring compatibility with downstream analysis pipelines.
 
 ## Features
 

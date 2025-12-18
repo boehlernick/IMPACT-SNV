@@ -1,29 +1,145 @@
-# Byte-compiled / temporary files
-*.pyc
-*.pyo
-*.Rhistory
-*.RData
-*.Rproj.user
+# =============================================================================
+# R Language
+# =============================================================================
+.Rhistory
+.RData
+.Rproj.user/
+.Rproj
+*.Rproj
+*.Ruserdata
+.Renviron
+.Rprofile
+renv/
+
+# =============================================================================
+# Python
+# =============================================================================
 __pycache__/
-.DS_Store
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# =============================================================================
+# Genomics Data Formats (typically large, can be regenerated)
+# =============================================================================
+*.gds
+*.gds.idx
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+*.bam
+*.bai
+*.bcf
+*.bcf.csi
+*.fasta
+*.fasta.fai
+*.fa
+*.fa.fai
+
+# =============================================================================
+# DNAnexus Build Artifacts
+# =============================================================================
+*.dxapp
+*.app
+.dxapp/
+dxda/
+dxapp_dest/
+
+# =============================================================================
+# Text Editor & IDE
+# =============================================================================
+.vscode/
+.idea/
 *.swp
 *.swo
+*~
+.sublime-project
+.sublime-workspace
+*.iml
+.project
+.settings/
+.classpath
+
+# =============================================================================
+# OS Generated Files
+# =============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Icon?
+
+# =============================================================================
+# Build Outputs & Artifacts
+# =============================================================================
 *.bak
 *.tmp
-*.log
+*.temp
 *.out
+*.log
 *.aux
 *.toc
-*.gz
+*.backup
+*.html
+*_files/
+*.md.backup
+
+# =============================================================================
+# Compressed Archives
+# =============================================================================
 *.zip
+*.tar
 *.tar.gz
-*.egg-info/
-# VSCode
-.vscode/
-# OS generated
-Thumbs.db
-ehthumbs.db
-Icon?
-# DNAnexus build artifacts
-*.app
-*.dxapp
+*.tar.bz2
+*.7z
+*.rar
+
+# =============================================================================
+# Environment & Runtime
+# =============================================================================
+.env
+.env.local
+.env.*.local
+venv/
+ENV/
+env/
+node_modules/
+
+# =============================================================================
+# R Package Build
+# =============================================================================
+.Rbuildignore
+^Meta$
+^doc$
+^revdep$
+
+# =============================================================================
+# Local Data & Test Files (if any generated during development)
+# =============================================================================
+test_output/
+temp_data/
+local_data/
+*.test
+

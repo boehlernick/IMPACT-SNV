@@ -11,7 +11,7 @@ This applet runs the IMPACT-prioritization module to score and prioritize varian
 
 ## Usage Example
 ```
-dx run step4_IMPACT_prioritization -igenelist=GeneList.txt -igds_files=merged_chr1.gds, merged_chr2.gds,...
+dx run step4_impact_prioritization -igenelist=GeneList.txt -igds_files=merged_chr1.gds, merged_chr2.gds,...
 ```
 
 ## Notes

@@ -1,4 +1,4 @@
-# VCF to GDS Converter for UK Biobank RAP
+# VCF to GDS Converter for DNAnexus Research Analysis Platform
 #### Developed by Andrew Wood. University of Exeter
 This applet converts a VCF to a GDS for subsequent use 
 (e.g. [FAVOR annotations](https://github.com/xihaoli/favorannotator-rap) / [STAARpipeline](https://github.com/xihaoli/staarpipeline-rap)). 

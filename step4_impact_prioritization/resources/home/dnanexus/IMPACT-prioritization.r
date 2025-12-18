@@ -96,6 +96,7 @@ suppressPackageStartupMessages({
   quiet_install("rlang")
   quiet_install("cli")
   quiet_install("stringr")
+  quiet_install("stringi")
   quiet_install("readr")
   quiet_install("digest")
   quiet_bioc_install(c("SeqArray", "SeqVarTools"))
@@ -103,6 +104,7 @@ suppressPackageStartupMessages({
   library(cli)
   library(dplyr)
   library(stringr)
+  library(stringi)
   library(parallel)
   library(readr)
   library(digest)
@@ -110,6 +112,20 @@ suppressPackageStartupMessages({
   library(SeqVarTools)
   library(tidyr)
 })
+
+# Source the seqarray_append functions for post-processing GDS files
+script_dir <- dirname(sys.frame(1)$ofile)
+if (is.null(script_dir) || script_dir == "") {
+  script_dir <- "."  # Default to current directory
+}
+seqarray_append_path <- file.path(script_dir, "seqarray_append.R")
+if (file.exists(seqarray_append_path)) {
+  source(seqarray_append_path)
+} else if (file.exists("seqarray_append.R")) {
+  source("seqarray_append.R")
+} else {
+  warning("seqarray_append.R not found - post-processing will be skipped")
+}
 
 
 # Utility functions
@@ -303,7 +319,16 @@ run_sample_merge <- function() {
       merged_file <- paste0(sample_id, "_SNV_IMPACT.gds")
       message("Merging files for sample: ", sample_id)
       seqMerge(sample_files, merged_file, verbose = TRUE)
-
+      # Post-process the merged GDS file with seqarray_append
+      # Adds tier, clnsig_flags, and renames patho_score to impact_score
+      if (exists("process_gds_file")) {
+        message("Post-processing GDS file: ", merged_file)
+        tryCatch({
+          process_gds_file(merged_file)
+        }, error = function(e) {
+          warning("Post-processing failed for ", merged_file, ": ", e$message)
+        })
+      }
       # Move merged file to output directory
       file.copy(merged_file, file.path("out", merged_file), overwrite = TRUE)
     } else {

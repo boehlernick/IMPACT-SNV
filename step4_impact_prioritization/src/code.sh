@@ -4,14 +4,21 @@ set -euo pipefail
 # DNAnexus applet entrypoint for IMPACT-prioritization
 # Inputs: $genelist (GeneList.txt), $gds_files (array of .gds files)
 
+# Change to home directory where resources are deployed
+cd /home/dnanexus
+
 # download inputs to working directory
-dx download "$genelist"   -o GeneList.txt
+dx download "$genelist" -o GeneList.txt
 for file in "${gds_files[@]}"; do
   dx download "$file" -o .
 done
 
 # Confirm R version
 R --version
+
+# List available R scripts for debugging
+echo "Available R scripts:"
+ls -la *.R *.r 2>/dev/null || echo "No R scripts found"
 
 # Run the prioritization script
 Rscript IMPACT-prioritization.r

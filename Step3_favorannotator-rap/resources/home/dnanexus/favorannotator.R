@@ -1,4 +1,5 @@
-### UKB RAP FAVOR Full Database V3.1 ###
+### FAVOR Full Database V3.1 Annotator ###
+### Designed for DNAnexus Research Analysis Platform ###
 ### Dependencies ###
 # Install Rust and XSV in terminal before running #
 # curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -8,7 +9,7 @@
 # xsv --version
 
 ### Usage ###
-# Rscript favorannotator_UKB_v2.r FA_UKB_V2_chr15 merged_chr15.gds 15 TRUE
+# Rscript favorannotator.r FA_chr15 merged_chr15.gds 15 TRUE
 # Note four mandatory inputs in order are "Output filename prefix" "input filename" "chromosome number" "Compression"
 # One optional input for the FAVOR CSV database download directly from your own project is the 5th argument
 
