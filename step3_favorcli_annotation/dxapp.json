@@ -1,0 +1,158 @@
+{
+  "name": "step3_favorcli_annotation",
+  "title": "Experimental FAVOR-CLI Annotation Skeleton",
+  "summary": "Experimental scaffolding for a future FAVOR-CLI-backed Step 3 annotation boundary.",
+  "description": "Extracts canonical variant identity tables from chromosome-level GDS or VCF inputs and provides a dry-run boundary for future FAVOR-CLI integration. This applet does not inject annotations into GDS and is not a replacement for legacy FAVORannotator.",
+  "dxapi": "1.0.0",
+  "version": "0.1.0",
+  "inputSpec": [
+    {
+      "name": "gds_file",
+      "label": "Chromosome-level GDS file",
+      "class": "file",
+      "patterns": [
+        "*.gds"
+      ],
+      "optional": true,
+      "help": "Chromosome-level GDS input used for variant identity extraction."
+    },
+    {
+      "name": "vcf_file",
+      "label": "Chromosome-level VCF or VCF.GZ file",
+      "class": "file",
+      "patterns": [
+        "*.vcf",
+        "*.vcf.gz"
+      ],
+      "optional": true,
+      "help": "Optional VCF/VCF.GZ input for the scaffold boundary."
+    },
+    {
+      "name": "favor_database_file",
+      "label": "FAVOR database file",
+      "class": "file",
+      "patterns": [
+        "*.db",
+        "*.sqlite",
+        "*.csv",
+        "*.tsv",
+        "*.txt",
+        "*.parquet",
+        "*.tar.gz",
+        "*.zip"
+      ],
+      "optional": true,
+      "help": "Optional FAVOR database artifact for future FAVOR-CLI invocation."
+    },
+    {
+      "name": "favor_cli_path",
+      "label": "FAVOR-CLI executable path",
+      "class": "string",
+      "optional": false,
+      "default": "favor",
+      "help": "Executable name or path for FAVOR-CLI when it becomes available."
+    },
+    {
+      "name": "favor_database_version",
+      "label": "FAVOR database version",
+      "class": "string",
+      "optional": true,
+      "help": "Documented FAVOR database version used for provenance."
+    },
+    {
+      "name": "reference_genome_build",
+      "label": "Reference genome build",
+      "class": "string",
+      "optional": false,
+      "default": "GRCh38",
+      "help": "Reference genome build used to interpret variant identities."
+    },
+    {
+      "name": "threads",
+      "label": "Thread count",
+      "class": "int",
+      "optional": false,
+      "default": 4,
+      "help": "Number of worker threads to reserve for future FAVOR-CLI use."
+    },
+    {
+      "name": "memory_budget_gb",
+      "label": "Memory budget (GB)",
+      "class": "int",
+      "optional": false,
+      "default": 8,
+      "help": "Declared memory budget for future FAVOR-CLI runs."
+    },
+    {
+      "name": "output_dir",
+      "label": "Output directory",
+      "class": "string",
+      "optional": false,
+      "default": "out/favorcli_skeleton",
+      "help": "Directory used for intermediate tables, validation reports, and raw-output placeholders."
+    },
+    {
+      "name": "dry_run",
+      "label": "Dry-run mode",
+      "class": "boolean",
+      "optional": false,
+      "default": true,
+      "help": "Validate configuration and extract variant identity without invoking FAVOR-CLI."
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "variant_identity_table",
+      "label": "Canonical variant identity table",
+      "class": "file",
+      "patterns": [
+        "variant_identity.tsv"
+      ],
+      "help": "Read-only extracted variant identity table."
+    },
+    {
+      "name": "validation_report",
+      "label": "Validation report",
+      "class": "file",
+      "patterns": [
+        "favorcli_validation_report.txt"
+      ],
+      "help": "Validation summary for dry-run and scaffold execution."
+    },
+    {
+      "name": "run_manifest",
+      "label": "Run manifest",
+      "class": "file",
+      "patterns": [
+        "favorcli_run_manifest.json"
+      ],
+      "help": "Provenance and scaffold execution manifest."
+    }
+  ],
+  "runSpec": {
+    "timeoutPolicy": {
+      "*": {
+        "hours": 48
+      }
+    },
+    "interpreter": "bash",
+    "file": "src/code.sh",
+    "distribution": "Ubuntu",
+    "release": "24.04",
+    "version": "0"
+  },
+  "access": {
+    "network": [
+      "*"
+    ]
+  },
+  "regionalOptions": {
+    "aws:eu-west-2": {
+      "systemRequirements": {
+        "*": {
+          "instanceType": "mem1_ssd1_v2_x16"
+        }
+      }
+    }
+  }
+}

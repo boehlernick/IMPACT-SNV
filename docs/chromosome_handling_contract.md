@@ -44,6 +44,8 @@ This document does **not** define:
 
 The initial refactor goal is to stop dropping X and Y variants and to allow them to flow through the same IMPACT-SNV prioritization framework where annotation support exists.
 
+The current repository state already includes X/Y-aware chromosome splitting in Step 1, so the remaining work in this contract is mainly to preserve that behavior and avoid accidental regressions.
+
 ## Current Behavior Summary
 
 The current IMPACT-SNV workflow is primarily autosome-oriented.
@@ -51,8 +53,9 @@ The current IMPACT-SNV workflow is primarily autosome-oriented.
 Current Step 1 behavior:
 
 - Splits merged VCF output into chromosome-specific files.
-- Currently constructs chromosomes using `chr1` through `chr22`.
-- Does not currently emit `merged_chrX.vcf.gz` or `merged_chrY.vcf.gz`.
+- Attempts chromosome-specific outputs for `chr1` through `chr22`, `chrX`, and `chrY`.
+- Preserves the chromosome naming style already present in the merged VCF when choosing `bcftools view --regions` inputs.
+- Skips chromosomes with no variants instead of failing the step.
 
 Current Step 2 behavior:
 
@@ -67,7 +70,8 @@ Current Step 3 legacy FAVORannotator behavior:
 
 Current Step 4 behavior:
 
-- Already contains some filename patterns that can match `X`, `Y`, or `M` chromosome suffixes.
+- Already contains filename patterns that can match `X`, `Y`, or `M` chromosome suffixes.
+- Can discover `merged_chrX.gds` and `merged_chrY.gds` when present.
 - Still depends on earlier steps producing and annotating those chromosome files.
 
 ## Target Chromosome Support

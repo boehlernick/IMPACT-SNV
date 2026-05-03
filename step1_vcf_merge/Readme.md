@@ -27,4 +27,11 @@ The IMPACT SNV and InDel VCF Processing app is designed to merge multiple VCF or
 
 ### Outputs
 
-- **split_merged_vcf**: merged sample VCF.gz files for chromosomes 1-22
+- **split_merged_vcf**: merged sample VCF.gz files for chromosomes 1-22, X, and Y
+
+### Chromosome Handling
+
+- The step attempts chromosome-specific outputs for `chr1` through `chr22`, `chrX`, and `chrY`.
+- Inputs that use bare chromosome names (`1`, `X`, `Y`) are matched using the same naming style for `bcftools view --regions`.
+- Empty chromosomes are skipped with a log message instead of failing the merge step.
+- Output file names remain `merged_chr1.vcf.gz` through `merged_chr22.vcf.gz`, plus `merged_chrX.vcf.gz` and `merged_chrY.vcf.gz` when present.

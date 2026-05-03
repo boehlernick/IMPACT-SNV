@@ -13,7 +13,7 @@ This step performs variant prioritization on annotated GDS files using gene-dise
 ## Input Requirements
 
 ### Annotated GDS Files
-- FAVOR-annotated GDS files from Step 3 (e.g., `merged_chr*.gds`)
+- FAVOR-annotated GDS files from Step 3 (e.g., `merged_chr*.gds`, including `merged_chrX.gds` and `merged_chrY.gds` when present)
 - Must contain `annotation/info/FunctionalAnnotation/` nodes
 
 ### Gene-Disease Association File (`GeneList.txt`)
@@ -121,6 +121,8 @@ dx run step4_impact_prioritization \
   -igds_files=favor_merged_chr2.gds \
   -igds_files=favor_merged_chr3.gds
 ```
+
+The applet input discovery pattern also accepts `merged_chrX.gds` and `merged_chrY.gds` when those chromosomes are present in Step 1 output.
 
 **Applet Inputs:**
 | Input | Type | Required | Description |

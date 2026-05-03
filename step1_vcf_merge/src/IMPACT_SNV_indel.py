@@ -62,6 +62,41 @@ def check_vcf_headers(vcf_file, bcftools_path):
         print(f"Error: BCFtools view command failed with exit code {e.returncode}")
 
 
+def detect_chromosome_prefix(vcf_file):
+    open_func = gzip.open if vcf_file.endswith('.gz') else open
+    with open_func(vcf_file, 'rt') as fin:
+        for line in fin:
+            if line.startswith('#'):
+                continue
+            columns = line.strip().split('\t')
+            if not columns:
+                continue
+            chromosome = columns[0].lower()
+            if chromosome.startswith('chr'):
+                return 'chr'
+            return ''
+    return 'chr'
+
+
+def region_has_variants(vcf_file, region, bcftools_path):
+    process = subprocess.Popen(
+        [bcftools_path, 'view', '-H', '--regions', region, vcf_file],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    try:
+        return bool(process.stdout.readline())
+    finally:
+        if process.stdout is not None:
+            process.stdout.close()
+        try:
+            process.kill()
+        except OSError:
+            pass
+        process.wait()
+
+
 def remove_format_variables(vcf_file, bcftools_path):
 
     open_func = gzip.open if vcf_file.endswith('.gz') else open
@@ -118,16 +153,29 @@ def merge_vcf_files(input_vcf_files, output_vcf, bcftools_path):
         print(f"Error: BCFtools merge command failed with exit code {e.returncode}")
 
 def split_vcf_by_chromosome(merged_vcf, bcftools_path):
-    chromosomes = [f"chr{i}" for i in range(1, 23)]
+    chromosome_prefix = detect_chromosome_prefix(merged_vcf)
+    if chromosome_prefix:
+        print(f"Detected chromosome naming style with 'chr' prefix in {merged_vcf}")
+    else:
+        print(f"Detected chromosome naming style without 'chr' prefix in {merged_vcf}")
+
+    chromosomes = [str(i) for i in range(1, 23)] + ['X', 'Y']
     split_vcf_files = []
-    for chr in chromosomes:
-        output_chr_vcf = f"merged_{chr}.vcf.gz"
+    for chromosome in chromosomes:
+        region_name = f"{chromosome_prefix}{chromosome}"
+        output_chr_vcf = f"merged_chr{chromosome}.vcf.gz"
+
+        if not region_has_variants(merged_vcf, region_name, bcftools_path):
+            print(f"No variants found for {region_name}; skipping {output_chr_vcf}")
+            continue
+
         try:
-            subprocess.run([bcftools_path, 'view', merged_vcf, '--regions', chr, '-o', output_chr_vcf], check=True)
+            subprocess.run([bcftools_path, 'view', '-Oz', merged_vcf, '--regions', region_name, '-o', output_chr_vcf], check=True)
+            index_vcf_file(output_chr_vcf, bcftools_path)
             print(f"Split VCF file saved as: {output_chr_vcf}")
             split_vcf_files.append(output_chr_vcf)
         except subprocess.CalledProcessError as e:
-            print(f"Error: BCFtools view command failed for {chr} with exit code {e.returncode}")
+            print(f"Error: BCFtools view command failed for {region_name} with exit code {e.returncode}")
             return None
     return split_vcf_files
 
@@ -220,7 +268,7 @@ def main(input_vcfs, reference_genome, **kwargs):
     # Index the normalized and compressed merged VCF file
     index_vcf_file(f"{normalized_merged_vcf}.gz", bcftools_path)
     
-    # Split the merged VCF file by chromosome
+    # Split the merged VCF file by chromosome, preserving autosomes and X/Y when present
     split_vcf_files = split_vcf_by_chromosome(f"{normalized_merged_vcf}.gz", bcftools_path)
     if split_vcf_files is None:
         raise RuntimeError("Failed to split the merged VCF file by chromosome.")

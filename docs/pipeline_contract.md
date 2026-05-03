@@ -76,10 +76,16 @@ Current important behavior:
 - The merged output is bgzipped and indexed.
 - Chromosome-specific VCF files are emitted using the `merged_chr*.vcf.gz` naming convention.
 
-Current known limitation:
+Current chromosome split behavior:
 
-- The current chromosome splitting logic is autosome-only and constructs `chr1` through `chr22`.
-- X and Y chromosome support is a target of the refactor but is not part of the current pipeline contract.
+- The split step attempts chromosome-specific outputs for `chr1` through `chr22`, `chrX`, and `chrY`.
+- The region naming used for `bcftools view --regions` matches the chromosome naming style already present in the merged VCF.
+- Chromosomes with no variants are skipped with a log message instead of failing the step.
+
+Current remaining limitations:
+
+- Mitochondrial chromosomes are not part of the current pipeline contract.
+- Numeric sex chromosome aliases such as `23` and `24` are not silently converted.
 
 Current Step 1 input contract:
 
@@ -103,18 +109,9 @@ merged_chr1.vcf.gz
 merged_chr2.vcf.gz
 ...
 merged_chr22.vcf.gz
-```
-
-Target refactor note:
-
-Future chromosome handling should support:
-
-```text
 merged_chrX.vcf.gz
 merged_chrY.vcf.gz
 ```
-
-but this must be implemented as an explicit behavior change with validation.
 
 ## Step 2: VCF-to-GDS Conversion
 
@@ -137,6 +134,8 @@ Current role:
 - Convert each VCF file to SeqArray GDS format using `SeqArray::seqVCF2GDS`.
 - Add `annotation/info/QC_label` with value `PASS` for every variant.
 - Upload generated GDS files as DNAnexus applet outputs.
+
+The current input/output naming path is compatible with X/Y chromosome files emitted by Step 1.
 
 Current important behavior:
 
@@ -198,6 +197,11 @@ Current role:
 ```text
 annotation/info/FunctionalAnnotation/
 ```
+
+Current chromosome/file discovery behavior:
+
+- The filename pattern `^merged_chr.*\.gds$` matches autosomes and sex chromosomes such as `merged_chrX.gds` and `merged_chrY.gds`.
+- The existing export path preserves sample-specific files such as `{sample_id}_chrX.gds` and `{sample_id}_chrY.gds` when those chromosomes are present.
 
 Current important behavior:
 
