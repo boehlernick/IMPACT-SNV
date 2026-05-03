@@ -184,6 +184,22 @@ Generate this file by:
 2. Exporting gene associations with global scores
 3. Formatting as tab-separated with header row
 
+## Refactor Planning and Contracts
+
+The IMPACT-SNV pipeline is undergoing a phased refactor to replace the legacy FAVORannotator-based annotation step with a modern FAVOR-CLI-backed adapter, while preserving the existing prioritization logic and output contract.
+
+For developers and contributors, comprehensive documentation is available:
+
+- **[Pipeline Contract](docs/pipeline_contract.md)** - Current IMPACT-SNV workflow, inputs, outputs, and step-specific behavior
+- **[FAVOR-CLI Refactor Plan](docs/favorcli_refactor_plan.md)** - Staged modernization strategy and architecture
+- **[Annotation Compatibility Contract](docs/annotation_compatibility_contract.md)** - Required annotation fields and compatibility schema for Step 4
+- **[Output GDS Contract](docs/output_gds_contract.md)** - Final output file structure and naming requirements
+- **[Chromosome Handling Contract](docs/chromosome_handling_contract.md)** - Current (chr1-22) and target (chr1-22, X, Y) chromosome support
+- **[FAVOR-CLI Schema Discovery Protocol](docs/favorcli_schema_discovery.md)** - Guidelines for empirical discovery of FAVOR-CLI output schema
+- **[Documentation Index](docs/README.md)** - Overview of all refactor and contract documentation
+
+These documents are designed to support code review, automated agents, and maintainability during the refactor. See [.github/copilot-instructions.md](.github/copilot-instructions.md) for additional GitHub Copilot coding agent instructions specific to this repository.
+
 ## References
 
 ### Tools and Databases
