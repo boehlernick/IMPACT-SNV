@@ -190,13 +190,24 @@ The IMPACT-SNV pipeline is undergoing a phased refactor to replace the legacy FA
 
 For developers and contributors, comprehensive documentation is available:
 
+### Development Guidelines
+- **[Copilot Instructions](.github/copilot-instructions.md)** - Development guardrails, FAVOR-CLI principles, and critical guardrails for coding agents
+
+### Architectural References
+- **[FAVOR-CLI Refactor Plan](docs/favorcli_refactor_plan.md)** - Staged modernization strategy (10-milestone roadmap) and overall architecture
 - **[Pipeline Contract](docs/pipeline_contract.md)** - Current IMPACT-SNV workflow, inputs, outputs, and step-specific behavior
-- **[FAVOR-CLI Refactor Plan](docs/favorcli_refactor_plan.md)** - Staged modernization strategy and architecture
+
+### Contract Specifications
 - **[Annotation Compatibility Contract](docs/annotation_compatibility_contract.md)** - Required annotation fields and compatibility schema for Step 4
 - **[Output GDS Contract](docs/output_gds_contract.md)** - Final output file structure and naming requirements
 - **[Chromosome Handling Contract](docs/chromosome_handling_contract.md)** - Current (chr1-22) and target (chr1-22, X, Y) chromosome support
+
+### Discovery and Validation
 - **[FAVOR-CLI Schema Discovery Protocol](docs/favorcli_schema_discovery.md)** - Guidelines for empirical discovery of FAVOR-CLI output schema
-- **[Documentation Index](docs/README.md)** - Overview of all refactor and contract documentation
+- **[Milestone Review](MILESTONE_REVIEW_123.md)** - Status of Milestones 1-3 and recommendations for next steps
+
+### Documentation Index
+- **[Complete Documentation Index](docs/README.md)** - Overview of all refactor and contract documentation
 
 These documents are designed to support code review, automated agents, and maintainability during the refactor. See [.github/copilot-instructions.md](.github/copilot-instructions.md) for additional GitHub Copilot coding agent instructions specific to this repository.
 

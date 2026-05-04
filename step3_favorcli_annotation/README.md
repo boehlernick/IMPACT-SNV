@@ -59,7 +59,7 @@ Chromosomes are normalized to the contract used by [`docs/chromosome_handling_co
 The scaffold makes the following configuration explicit:
 
 - `favor_cli_path`
-- `favor_database_path`
+- `favor_database_path` / `favor_database_file` on DNAnexus
 - `favor_database_version`
 - `reference_genome_build`
 - `threads`
