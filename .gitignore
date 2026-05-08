@@ -54,6 +54,8 @@ MANIFEST
 *.fasta.fai
 *.fa
 *.fa.fai
+*.parquet
+*.annotated
 
 # =============================================================================
 # DNAnexus Build Artifacts
@@ -142,4 +144,5 @@ test_output/
 temp_data/
 local_data/
 *.test
+tests/genebreaker_vcfs
 

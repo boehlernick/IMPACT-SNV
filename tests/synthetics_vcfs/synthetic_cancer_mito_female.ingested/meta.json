@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "join_key": "chrom_pos_ref_alt",
+  "variant_count": 28,
+  "per_chrom": {
+    "6": {
+      "variant_count": 1,
+      "size_bytes": 2013
+    },
+    "11": {
+      "variant_count": 1,
+      "size_bytes": 2018
+    },
+    "10": {
+      "variant_count": 1,
+      "size_bytes": 2018
+    },
+    "5": {
+      "variant_count": 1,
+      "size_bytes": 2013
+    },
+    "21": {
+      "variant_count": 1,
+      "size_bytes": 2018
+    },
+    "8": {
+      "variant_count": 1,
+      "size_bytes": 2013
+    },
+    "4": {
+      "variant_count": 1,
+      "size_bytes": 2078
+    },
+    "15": {
+      "variant_count": 1,
+      "size_bytes": 2018
+    },
+    "1": {
+      "variant_count": 1,
+      "size_bytes": 2013
+    },
+    "17": {
+      "variant_count": 1,
+      "size_bytes": 2083
+    },
+    "12": {
+      "variant_count": 1,
+      "size_bytes": 2018
+    },
+    "3": {
+      "variant_count": 1,
+      "size_bytes": 2013
+    },
+    "22": {
+      "variant_count": 1,
+      "size_bytes": 2023
+    },
+    "18": {
+      "variant_count": 1,
+      "size_bytes": 2018
+    },
+    "19": {
+      "variant_count": 2,
+      "size_bytes": 2024
+    },
+    "X": {
+      "variant_count": 2,
+      "size_bytes": 2019
+    },
+    "2": {
+      "variant_count": 1,
+      "size_bytes": 2013
+    },
+    "MT": {
+      "variant_count": 1,
+      "size_bytes": 2088
+    },
+    "7": {
+      "variant_count": 2,
+      "size_bytes": 2116
+    },
+    "14": {
+      "variant_count": 1,
+      "size_bytes": 2018
+    },
+    "20": {
+      "variant_count": 1,
+      "size_bytes": 2018
+    },
+    "16": {
+      "variant_count": 1,
+      "size_bytes": 2018
+    },
+    "9": {
+      "variant_count": 1,
+      "size_bytes": 2022
+    },
+    "Y": {
+      "variant_count": 1,
+      "size_bytes": 2013
+    },
+    "13": {
+      "variant_count": 1,
+      "size_bytes": 2018
+    }
+  },
+  "columns": [
+    "chromosome",
+    "position",
+    "ref",
+    "alt",
+    "rsid",
+    "qual",
+    "filter"
+  ],
+  "source": "3 files",
+  "kind": {
+    "type": "Ingested"
+  }
+}
