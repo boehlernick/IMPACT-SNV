@@ -1,62 +1,148 @@
-{
   "name": "step1_vcf_merge",
-  "title": "IMPACT SNV and InDel vcf merging",
-  "summary": "Merges and annotates SNV and InDel vcf input files into chromosome-separated",
+  "title": "IMPACT Step 1 - VCF Merge",
+  "summary": "Merges two or more VCF/VCF.GZ/BCF files into one indexed multi-sample VCF.GZ with optional/automatic normalization.",
   "dxapi": "1.0.0",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "inputSpec": [
     {
       "name": "input_vcfs",
-      "label": "VCF or VCF.GZ files",
+      "label": "Input VCF/VCF.GZ/BCF files",
       "class": "array:file",
       "optional": false,
       "patterns": [
         "*.vcf",
-        "*.vcf.gz"
+        "*.vcf.gz",
+        "*.bcf"
       ],
-      "help": "Input VCF files to be merged"
-    },
-    {
-      "name": "index_files",
-      "label": "Index files for VCF or VCF.GZ files",
-      "class": "array:file",
-      "optional": true,
-      "patterns": [
-        "*.tbi",
-        "*.csi"
-      ],
-      "help": "Optional index files for the input VCF files"
+      "help": "Two or more input VCF/VCF.GZ/BCF files to merge. Sample IDs must be unique unless force_samples is enabled. Reheader GeneBreaker trio sample IDs before merging."
     },
     {
       "name": "reference_genome",
-      "label": "Reference Genome",
+      "label": "Reference FASTA",
       "class": "file",
-      "optional": false,
+      "optional": true,
       "patterns": [
         "*.fa",
         "*.fasta"
       ],
-      "help": "Reference genome file for normalization"
+      "help": "Reference FASTA used by bcftools norm. Required for normalization_mode=always and in auto mode if preflight detects normalization is needed."
+    },
+    {
+      "name": "reference_fai",
+      "label": "Reference FASTA index (.fai)",
+      "class": "file",
+      "optional": true,
+      "patterns": [
+        "*.fai"
+      ],
+      "help": "FASTA index for reference_genome. Provide whenever reference_genome is supplied."
+    },
+    {
+      "name": "output_name",
+      "label": "Output merged VCF name",
+      "class": "string",
+      "optional": true,
+      "default": "merged.vcf.gz",
+      "help": "Output name. .vcf.gz is recommended; .vcf will be normalized to .vcf.gz."
+    },
+    {
+      "name": "normalization_mode",
+      "label": "Normalization mode",
+      "class": "string",
+      "optional": true,
+      "default": "auto",
+      "choices": [
+        "auto",
+        "always",
+        "never"
+      ],
+      "help": "auto: heuristic preflight; always: force bcftools norm; never: merge as-is."
+    },
+    {
+      "name": "preflight_records",
+      "label": "Preflight records per VCF",
+      "class": "int",
+      "optional": true,
+      "default": 10000,
+      "help": "Maximum records to inspect per VCF in auto mode."
+    },
+    {
+      "name": "threads",
+      "label": "BCFtools threads",
+      "class": "int",
+      "optional": true,
+      "default": 4,
+      "help": "Threads for bcftools."
+    },
+    {
+      "name": "force_samples",
+      "label": "Allow duplicate sample IDs",
+      "class": "boolean",
+      "optional": true,
+      "default": false,
+      "help": "Pass --force-samples to bcftools merge; usually reheader instead."
+    },
+    {
+      "name": "keep_intermediates",
+      "label": "Upload intermediate VCFs",
+      "class": "boolean",
+      "optional": true,
+      "default": false,
+      "help": "Upload prepared/normalized intermediate files for debugging."
+    },
+    {
+      "name": "extra_merge_args",
+      "label": "Additional bcftools merge arguments",
+      "class": "array:string",
+      "optional": true,
+      "help": "Advanced additional arguments for bcftools merge."
     }
   ],
   "outputSpec": [
     {
       "name": "merged_vcf",
-      "label": "Merged VCF.GZ file output",
+      "label": "Merged multi-sample VCF.GZ",
       "class": "file",
       "patterns": [
         "*.vcf.gz"
       ],
-      "help": "Merged VCF file"
+      "help": "Merged bgzipped multi-sample VCF."
     },
     {
-      "name": "split_vcfs",
-      "label": "Chromosome-specific VCF.GZ files",
-      "class": "array:file",
+      "name": "merged_vcf_index",
+      "label": "Merged VCF index",
+      "class": "file",
+      "optional": true,
       "patterns": [
-        "*.vcf.gz"
+        "*.tbi",
+        "*.csi"
       ],
-      "help": "VCF files split by chromosome"
+      "help": "Index for merged VCF."
+    },
+    {
+      "name": "merge_command_log",
+      "label": "Merge command log",
+      "class": "file",
+      "patterns": [
+        "*.txt"
+      ],
+      "help": "Executed command log."
+    },
+    {
+      "name": "merge_summary_json",
+      "label": "Merge summary JSON",
+      "class": "file",
+      "patterns": [
+        "*.json"
+      ],
+      "help": "Merge summary and provenance."
+    },
+    {
+      "name": "intermediate_vcfs",
+      "label": "Intermediate VCFs and indexes",
+      "class": "array:file",
+      "optional": true,
+      "help": "Uploaded only when keep_intermediates is true."
     }
   ],
   "runSpec": {
@@ -66,10 +152,18 @@
       }
     },
     "interpreter": "python3",
-    "file": "src/IMPACT_SNV_indel.py",
+    "file": "src/merge_dnanexus.py",
     "distribution": "Ubuntu",
     "release": "20.04",
-    "version": "0"
+    "version": "0",
+    "execDepends": [
+      {
+        "name": "bcftools"
+      },
+      {
+        "name": "tabix"
+      }
+    ]
   },
   "regionalOptions": {
     "aws:us-east-1": {
