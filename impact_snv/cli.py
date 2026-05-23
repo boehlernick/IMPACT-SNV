@@ -45,6 +45,16 @@ def _path(path_text: str) -> Path:
     return Path(path_text)
 
 
+def positive_int(v: str) -> int:
+    try:
+        x = int(v)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(f"Expected integer, got {v!r}") from e
+    if x < 1:
+        raise argparse.ArgumentTypeError("Value must be >= 1")
+    return x
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="impact-snv",
@@ -53,6 +63,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=f"impact-snv {DEFAULT_VERSION}")
     subparsers = parser.add_subparsers(dest="command", metavar="COMMAND", required=True)
+    add_merge_parser(subparsers)
     add_build_gds_parser(subparsers)
     add_finalize_gds_parser(subparsers)
     add_validate_gds_parser(subparsers)
@@ -61,46 +72,67 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def add_build_gds_parser(subparsers: argparse._SubParsersAction) -> None:
+def add_merge_parser(subparsers: argparse._SubParsersAction) -> None:
     p = subparsers.add_parser(
-        "build-gds",
-        help="Build pre-prioritization per-sample GDS files from FAVOR annotation/genotype parquet outputs.",
+        "merge",
+        help="Merge individual per-sample VCFs into an indexed multi-sample VCF.GZ.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument("--annotated-dir", required=True, type=_existing_dir, help="FAVOR annotated output directory")
-    p.add_argument("--genotypes-dir", required=True, type=_existing_dir, help="FAVOR genotype output directory containing samples.txt")
-    p.add_argument("--gene-list", required=True, type=_existing_file, help="GeneList.txt with symbol and globalScore columns")
-    p.add_argument("--out-dir", required=True, type=_path, help="Output build directory")
-    p.add_argument("--samples", nargs="+", help="Sample IDs to process; defaults to all samples if omitted")
-    p.add_argument("--all-samples", action="store_true", help="Process all samples from genotypes_dir/samples.txt")
-    p.add_argument("--chromosomes", nargs="+", default=["1-22", "X", "Y"], help="Chromosomes to process; supports ranges like 1-22")
-    p.add_argument("--dosage-threshold", type=float, default=0.0, help="Keep variants with dosage > threshold")
-    p.add_argument("--qc-mode", choices=QC_MODES, default="warn", help="QC behavior: warn, strict, or off")
-    p.add_argument("--force", action="store_true", help="Overwrite existing outputs")
-    p.add_argument("--dry-run", action="store_true", help="Print commands without executing")
-    p.add_argument("--python", default=sys.executable, help="Python executable used for flattening subprocesses")
-    p.add_argument("--rscript", default="Rscript", help="Rscript executable")
-    p.add_argument("--no-optimize", action="store_true", help="Pass --no-optimize to GDS writer")
-    p.add_argument("--keep-temp-vcf", action="store_true", help="Keep temporary VCF files from GDS writing")
-    p.add_argument("--write-preview-csv", action="store_true", help="Write preview CSVs for flat parquet outputs")
-    p.add_argument("--skip-chrom-gds", action="store_true", help="Skip per-chromosome GDS files and only write per-sample merged GDS")
-    p.add_argument("--no-merge-per-sample", dest="merge_per_sample", action="store_false", help="Do not create merged per-sample pre-prioritization GDS files")
+    src = p.add_mutually_exclusive_group(required=True)
+    src.add_argument("--vcfs", nargs="+", type=Path, help="Input VCF/VCF.GZ/BCF files; at least two")
+    src.add_argument("--vcf-manifest", type=_existing_file, help="TSV manifest with a vcf_path/vcf/path column")
+    p.add_argument("--out-vcf", required=True, type=_path, help="Output merged VCF path")
+    p.add_argument("--reference-fasta", type=_existing_file, help="Reference FASTA for bcftools norm; requires .fai")
+    p.add_argument("--reference-build", default="GRCh38", choices=["GRCh38"])
+    p.add_argument("--normalization-mode", choices=["auto", "always", "never"], default="auto")
+    p.add_argument("--preflight-records", type=positive_int, default=10000)
+    p.add_argument("--threads", type=positive_int, default=1)
+    p.add_argument("--work-dir", type=_path)
+    p.add_argument("--keep-intermediates", action="store_true")
+    p.add_argument("--force", action="store_true")
+    p.add_argument("--force-samples", action="store_true")
+    p.add_argument("--bcftools", type=_path)
+    p.add_argument("--bgzip", type=_path)
+    p.add_argument("--extra-merge-arg", action="append", default=[])
+    p.add_argument("--command-log", type=_path)
+    p.add_argument("--manifest-json", type=_path)
+    p.add_argument("--qc-mode", choices=QC_MODES, default="warn")
+    p.add_argument("--quiet", action="store_true")
+    p.set_defaults(func=cmd_merge)
+
+
+def add_build_gds_parser(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser("build-gds", help="Build pre-prioritization per-sample GDS files from FAVOR parquet outputs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add_argument("--annotated-dir", required=True, type=_existing_dir)
+    p.add_argument("--genotypes-dir", required=True, type=_existing_dir)
+    p.add_argument("--gene-list", required=True, type=_existing_file)
+    p.add_argument("--out-dir", required=True, type=_path)
+    p.add_argument("--samples", nargs="+")
+    p.add_argument("--all-samples", action="store_true")
+    p.add_argument("--chromosomes", nargs="+", default=["1-22", "X", "Y"])
+    p.add_argument("--dosage-threshold", type=float, default=0.0)
+    p.add_argument("--qc-mode", choices=QC_MODES, default="warn")
+    p.add_argument("--force", action="store_true")
+    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--python", default=sys.executable)
+    p.add_argument("--rscript", default="Rscript")
+    p.add_argument("--no-optimize", action="store_true")
+    p.add_argument("--keep-temp-vcf", action="store_true")
+    p.add_argument("--write-preview-csv", action="store_true")
+    p.add_argument("--skip-chrom-gds", action="store_true")
+    p.add_argument("--no-merge-per-sample", dest="merge_per_sample", action="store_false")
     p.set_defaults(merge_per_sample=True)
-    p.add_argument("--manifest-json", type=_path, help="Optional build manifest path")
+    p.add_argument("--manifest-json", type=_path)
     p.set_defaults(func=cmd_build_gds)
 
 
 def add_finalize_gds_parser(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser(
-        "finalize-gds",
-        help="Score pre-prioritization GDS files and make final IMPACT-VIS-ready *_SNV_IMPACT.gds outputs.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    p.add_argument("--input-dir", required=True, type=_existing_dir, help="Directory containing *_SNV_IMPACT.preprioritization.gds files")
-    p.add_argument("--gene-list", required=True, type=_existing_file, help="GeneList.txt with symbol and globalScore columns")
-    p.add_argument("--out-dir", required=True, type=_path, help="Directory for final <sample_id>_SNV_IMPACT.gds files")
+    p = subparsers.add_parser("finalize-gds", help="Score pre-prioritization GDS files and make final IMPACT-VIS-ready outputs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add_argument("--input-dir", required=True, type=_existing_dir)
+    p.add_argument("--gene-list", required=True, type=_existing_file)
+    p.add_argument("--out-dir", required=True, type=_path)
     p.add_argument("--qc-mode", choices=QC_MODES, default="warn")
-    p.add_argument("--samples", nargs="+", default=None, help="Optional sample IDs to finalize")
+    p.add_argument("--samples", nargs="+", default=None)
     p.add_argument("--rscript", default="Rscript")
     p.add_argument("--manifest-json", type=_path, default=None)
     p.add_argument("--force", action="store_true")
@@ -110,10 +142,10 @@ def add_finalize_gds_parser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_validate_gds_parser(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser("validate-gds", help="Validate final IMPACT-VIS-ready *_SNV_IMPACT.gds files", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p = subparsers.add_parser("validate-gds", help="Validate final IMPACT-VIS-ready GDS files", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = p.add_mutually_exclusive_group(required=True)
-    group.add_argument("--gds", type=_existing_file, help="Single final GDS file to validate")
-    group.add_argument("--input-dir", type=_existing_dir, help="Directory of final GDS files to validate")
+    group.add_argument("--gds", type=_existing_file)
+    group.add_argument("--input-dir", type=_existing_dir)
     p.add_argument("--rscript", default="Rscript")
     p.add_argument("--qc-mode", choices=QC_MODES, default="warn")
     p.set_defaults(func=cmd_validate_gds)
@@ -130,7 +162,6 @@ def add_qc_build_parser(subparsers: argparse._SubParsersAction) -> None:
 def add_placeholder_parsers(subparsers: argparse._SubParsersAction) -> None:
     planned = {
         "run": "Run the full workflow from VCF manifest to IMPACT-VIS-ready GDS outputs.",
-        "merge": "Merge individual per-sample VCFs into a normalized multi-sample VCF.",
         "favor-ingest": "Run FAVOR CLI ingest.",
         "favor-annotate": "Run FAVOR CLI annotation.",
     }
@@ -139,14 +170,33 @@ def add_placeholder_parsers(subparsers: argparse._SubParsersAction) -> None:
         p.set_defaults(func=cmd_not_implemented, planned_command=name)
 
 
+def cmd_merge(args: argparse.Namespace) -> int:
+    from impact_snv.merge.local import MergeCliArgs, load_vcfs_from_manifest, run_merge
+    vcfs = [Path(x) for x in args.vcfs] if args.vcfs else load_vcfs_from_manifest(Path(args.vcf_manifest))
+    return run_merge(MergeCliArgs(
+        vcfs=vcfs,
+        out_vcf=args.out_vcf,
+        reference_fasta=args.reference_fasta,
+        reference_build=args.reference_build,
+        normalization_mode=args.normalization_mode,
+        preflight_records=args.preflight_records,
+        threads=args.threads,
+        work_dir=args.work_dir,
+        keep_intermediates=args.keep_intermediates,
+        force=args.force,
+        force_samples=args.force_samples,
+        bcftools=args.bcftools,
+        bgzip=args.bgzip,
+        extra_merge_arg=list(args.extra_merge_arg or []),
+        command_log=args.command_log,
+        manifest_json=args.manifest_json,
+        qc_mode=args.qc_mode,
+        quiet=args.quiet,
+    ))
+
+
 def cmd_build_gds(args: argparse.Namespace) -> int:
-    try:
-        from impact_snv.gds.build import run_build_gds
-        from impact_snv.gds.build import package_path, resource_script
-    except ModuleNotFoundError as exc:
-        print("ERROR: impact_snv.gds.build is not importable", file=sys.stderr)
-        raise SystemExit(2) from exc
-    # Resolve internal scripts/resources here, after package import succeeds.
+    from impact_snv.gds.build import package_path, resource_script, run_build_gds
     args.flatten_script = package_path("impact_snv.gds.flatten")
     args.gds_writer = resource_script("favor_flat_to_seqarray_gds.R")
     if not args.all_samples and not args.samples:
@@ -155,18 +205,7 @@ def cmd_build_gds(args: argparse.Namespace) -> int:
 
 
 def cmd_finalize_gds(args: argparse.Namespace) -> int:
-    normalized = FinalizeGdsArgs(
-        input_dir=args.input_dir,
-        gene_list=args.gene_list,
-        out_dir=args.out_dir,
-        qc_mode=args.qc_mode,
-        samples=args.samples,
-        rscript=args.rscript,
-        force=args.force,
-        no_optimize=args.no_optimize,
-        keep_intermediate=args.keep_intermediate,
-        manifest_json=args.manifest_json,
-    )
+    normalized = FinalizeGdsArgs(args.input_dir, args.gene_list, args.out_dir, args.qc_mode, args.samples, args.rscript, args.force, args.no_optimize, args.keep_intermediate, args.manifest_json)
     from impact_snv.gds.finalize import run_finalize_gds
     return int(run_finalize_gds(normalized) or 0)
 
@@ -182,8 +221,7 @@ def cmd_qc_build(args: argparse.Namespace) -> int:
 
 
 def cmd_not_implemented(args: argparse.Namespace) -> int:
-    command = getattr(args, "planned_command", "unknown")
-    print(f"impact-snv {command} is planned for IMPACT-SNV v1.0.0 but is not implemented yet.", file=sys.stderr)
+    print(f"impact-snv {getattr(args, 'planned_command', 'unknown')} is planned but not implemented yet.", file=sys.stderr)
     return 2
 
 

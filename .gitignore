@@ -102,3 +102,4 @@ renv/staging/
 tests/gds_file_test/
 tests/genebreaker_vc/
 tests/genebreaker_vcfs/
+*_samples.txt
