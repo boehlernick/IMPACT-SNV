@@ -64,6 +64,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"impact-snv {DEFAULT_VERSION}")
     subparsers = parser.add_subparsers(dest="command", metavar="COMMAND", required=True)
     add_merge_parser(subparsers)
+    add_favor_ingest_parser(subparsers)
+    add_favor_annotate_parser(subparsers)
     add_build_gds_parser(subparsers)
     add_finalize_gds_parser(subparsers)
     add_validate_gds_parser(subparsers)
@@ -73,16 +75,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def add_merge_parser(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser(
-        "merge",
-        help="Merge individual per-sample VCFs into an indexed multi-sample VCF.GZ.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    p = subparsers.add_parser("merge", help="Merge individual per-sample VCFs into an indexed multi-sample VCF.GZ.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     src = p.add_mutually_exclusive_group(required=True)
-    src.add_argument("--vcfs", nargs="+", type=Path, help="Input VCF/VCF.GZ/BCF files; at least two")
-    src.add_argument("--vcf-manifest", type=_existing_file, help="TSV manifest with a vcf_path/vcf/path column")
-    p.add_argument("--out-vcf", required=True, type=_path, help="Output merged VCF path")
-    p.add_argument("--reference-fasta", type=_existing_file, help="Reference FASTA for bcftools norm; requires .fai")
+    src.add_argument("--vcfs", nargs="+", type=Path)
+    src.add_argument("--vcf-manifest", type=_existing_file)
+    p.add_argument("--out-vcf", required=True, type=_path)
+    p.add_argument("--reference-fasta", type=_existing_file)
     p.add_argument("--reference-build", default="GRCh38", choices=["GRCh38"])
     p.add_argument("--normalization-mode", choices=["auto", "always", "never"], default="auto")
     p.add_argument("--preflight-records", type=positive_int, default=10000)
@@ -99,6 +97,40 @@ def add_merge_parser(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--qc-mode", choices=QC_MODES, default="warn")
     p.add_argument("--quiet", action="store_true")
     p.set_defaults(func=cmd_merge)
+
+
+def add_favor_ingest_parser(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser("favor-ingest", help="Run FAVOR CLI ingest using the tested IMPACT-SNV contract.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add_argument("--input-vcf", required=True, type=_existing_file)
+    p.add_argument("--out-dir", required=True, type=_path)
+    p.add_argument("--out-prefix", required=True)
+    p.add_argument("--reference-build", default="GRCh38", choices=["GRCh38"])
+    p.add_argument("--favor-bin", default="favor")
+    p.add_argument("--force", action="store_true")
+    p.add_argument("--manifest-json", type=_path)
+    p.add_argument("--progress-interval-seconds", type=positive_int, default=60)
+    p.add_argument("--quiet", action="store_true")
+    p.add_argument("--tail-log-lines", type=int, default=0)
+    p.add_argument("--max-progress-log-line-chars", type=positive_int, default=300)
+    p.add_argument("--progress-mode", choices=["compact", "normal", "verbose"], default="normal")
+    p.set_defaults(func=cmd_favor_ingest)
+
+
+def add_favor_annotate_parser(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser("favor-annotate", help="Run FAVOR CLI annotate using the tested IMPACT-SNV contract.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add_argument("--ingested-dir", required=True, type=_existing_dir)
+    p.add_argument("--out-dir", required=True, type=_path)
+    p.add_argument("--out-prefix", required=True)
+    p.add_argument("--reference-build", default="GRCh38", choices=["GRCh38"])
+    p.add_argument("--favor-bin", default="favor")
+    p.add_argument("--force", action="store_true")
+    p.add_argument("--manifest-json", type=_path)
+    p.add_argument("--progress-interval-seconds", type=positive_int, default=60)
+    p.add_argument("--quiet", action="store_true")
+    p.add_argument("--tail-log-lines", type=int, default=0)
+    p.add_argument("--max-progress-log-line-chars", type=positive_int, default=300)
+    p.add_argument("--progress-mode", choices=["compact", "normal", "verbose"], default="normal")
+    p.set_defaults(func=cmd_favor_annotate)
 
 
 def add_build_gds_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -160,39 +192,24 @@ def add_qc_build_parser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_placeholder_parsers(subparsers: argparse._SubParsersAction) -> None:
-    planned = {
-        "run": "Run the full workflow from VCF manifest to IMPACT-VIS-ready GDS outputs.",
-        "favor-ingest": "Run FAVOR CLI ingest.",
-        "favor-annotate": "Run FAVOR CLI annotation.",
-    }
-    for name, help_text in planned.items():
-        p = subparsers.add_parser(name, help=f"[planned] {help_text}")
-        p.set_defaults(func=cmd_not_implemented, planned_command=name)
+    p = subparsers.add_parser("run", help="[planned] Run the full workflow from VCF manifest to IMPACT-VIS-ready GDS outputs.")
+    p.set_defaults(func=cmd_not_implemented, planned_command="run")
 
 
 def cmd_merge(args: argparse.Namespace) -> int:
     from impact_snv.merge.local import MergeCliArgs, load_vcfs_from_manifest, run_merge
     vcfs = [Path(x) for x in args.vcfs] if args.vcfs else load_vcfs_from_manifest(Path(args.vcf_manifest))
-    return run_merge(MergeCliArgs(
-        vcfs=vcfs,
-        out_vcf=args.out_vcf,
-        reference_fasta=args.reference_fasta,
-        reference_build=args.reference_build,
-        normalization_mode=args.normalization_mode,
-        preflight_records=args.preflight_records,
-        threads=args.threads,
-        work_dir=args.work_dir,
-        keep_intermediates=args.keep_intermediates,
-        force=args.force,
-        force_samples=args.force_samples,
-        bcftools=args.bcftools,
-        bgzip=args.bgzip,
-        extra_merge_arg=list(args.extra_merge_arg or []),
-        command_log=args.command_log,
-        manifest_json=args.manifest_json,
-        qc_mode=args.qc_mode,
-        quiet=args.quiet,
-    ))
+    return run_merge(MergeCliArgs(vcfs, args.out_vcf, args.reference_fasta, args.reference_build, args.normalization_mode, args.preflight_records, args.threads, args.work_dir, args.keep_intermediates, args.force, args.force_samples, args.bcftools, args.bgzip, list(args.extra_merge_arg or []), args.command_log, args.manifest_json, args.qc_mode, args.quiet))
+
+
+def cmd_favor_ingest(args: argparse.Namespace) -> int:
+    from impact_snv.favor.ingest import run_favor_ingest
+    return int(run_favor_ingest(args) or 0)
+
+
+def cmd_favor_annotate(args: argparse.Namespace) -> int:
+    from impact_snv.favor.annotate import run_favor_annotate
+    return int(run_favor_annotate(args) or 0)
 
 
 def cmd_build_gds(args: argparse.Namespace) -> int:
