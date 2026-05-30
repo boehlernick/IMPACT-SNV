@@ -169,20 +169,34 @@ Variants are assigned to tiers based on evidence strength:
 
 ## Gene-Disease Association File
 
-The `GeneList.txt` file should contain phenotype-specific gene associations from [Open Targets](https://www.opentargets.org/):
+IMPACT-SNV requires a phenotype-specific gene-disease association file. This file is supplied by the user and is not generated automatically by IMPACT-SNV during runtime.
 
-```
-symbol	globalScore
-GJB2	0.858985237
-OTOF	0.850795742
-MYO6	0.845566359
-...
+For the analyses described in the IMPACT manuscript, gene lists were manually generated from [Open Targets](https://www.opentargets.org/) by querying the phenotype of interest, exporting associated genes, and formatting the results as a tab-separated text file.
+
+The file must contain the following two columns:
+
+- `symbol`: approved gene symbol
+- `globalScore`: Open Targets global gene-disease association score for the queried phenotype
+
+Example:
+
+```text
+symbol    globalScore
+GJB2    0.858985237
+OTOF    0.850795742
+MYO6    0.845566359
 ```
 
-Generate this file by:
-1. Querying Open Targets for your phenotype of interest
-2. Exporting gene associations with global scores
-3. Formatting as tab-separated with header row
+To generate this file:
+
+1. Query Open Targets for the phenotype or disease of interest.
+2. Export the associated genes and global association scores.
+3. Retain or rename the gene-symbol column as `symbol`.
+4. Retain or rename the Open Targets global association score column as `globalScore`.
+5. Save the file as a tab-separated text file with a header row.
+
+Users may also supply manually curated phenotype-specific gene panels or gene lists from other resources. In that case, the file must still contain both `symbol` and `globalScore`. If using manually curated gene panels or non-Open Targets resources, users must provide a numeric `globalScore` column. We recommend documenting how these values were assigned or normalized, as they contribute to IMPACT-SNV prioritization.
+
 
 ## References
 
