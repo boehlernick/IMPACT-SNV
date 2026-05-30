@@ -66,6 +66,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_merge_parser(subparsers)
     add_favor_ingest_parser(subparsers)
     add_favor_annotate_parser(subparsers)
+    add_extract_genotypes_parser(subparsers)
     add_build_gds_parser(subparsers)
     add_finalize_gds_parser(subparsers)
     add_validate_gds_parser(subparsers)
@@ -114,6 +115,25 @@ def add_favor_ingest_parser(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--max-progress-log-line-chars", type=positive_int, default=300)
     p.add_argument("--progress-mode", choices=["compact", "normal", "verbose"], default="normal")
     p.set_defaults(func=cmd_favor_ingest)
+
+
+def add_extract_genotypes_parser(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser(
+        "extract-genotypes",
+        help="Extract multi-sample VCF genotypes into IMPACT-SNV genotype parquet.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    p.add_argument("--input-vcf", required=True, type=_existing_file)
+    p.add_argument("--out-dir", required=True, type=_path)
+    p.add_argument("--reference-build", default="GRCh38", choices=["GRCh38"])
+    p.add_argument("--chromosomes", nargs="+", default=["1-22", "X", "Y"])
+    p.add_argument("--bcftools", type=_path)
+    p.add_argument("--force", action="store_true")
+    p.add_argument("--qc-mode", choices=QC_MODES, default="warn")
+    p.add_argument("--progress-interval-records", type=positive_int, default=500000)
+    p.add_argument("--manifest-json", type=_path)
+    p.set_defaults(func=cmd_extract_genotypes)
+
 
 
 def add_favor_annotate_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -211,6 +231,9 @@ def cmd_favor_annotate(args: argparse.Namespace) -> int:
     from impact_snv.favor.annotate import run_favor_annotate
     return int(run_favor_annotate(args) or 0)
 
+def cmd_extract_genotypes(args: argparse.Namespace) -> int:
+    from impact_snv.genotypes.extract import run_extract_genotypes
+    return int(run_extract_genotypes(args) or 0)
 
 def cmd_build_gds(args: argparse.Namespace) -> int:
     from impact_snv.gds.build import package_path, resource_script, run_build_gds

@@ -1,48 +1,17 @@
 #!/usr/bin/env python3
-"""
-flatten_favor_for_gds.py
+"""Flatten FAVOR annotation + IMPACT-SNV genotype parquet for GDS building.
 
-Flatten FAVOR annotated parquet + FAVOR genotype parquet into a compact,
-per-sample, per-chromosome table suitable for validation before writing
-SeqArray-compatible IMPACT GDS files.
+This script creates one compact, per-sample, per-chromosome flat parquet table
+from:
 
-This script implements the first-pass IMPACT GDS inclusion rule:
+    annotated_dir/chromosome=<chrom>/data.parquet
+    genotypes_dir/chromosome=<chrom>/data.parquet
+    genotypes_dir/samples.txt
+    GeneList.txt
 
-    include variant if:
-      1. the selected sample has dosage > threshold, and
-      2. the FAVOR annotation maps the variant to at least one gene in GeneList.txt
-
-The output is NOT a GDS file. It is a flat preview/intermediate table that lets us
-validate joins, gene filtering, dosage extraction, and annotation mapping before
-we implement the R GDS writer.
-
-Expected inputs
----------------
-annotated_dir/
-  chromosome=1/data.parquet
-  chromosome=2/data.parquet
-  ...
-
-genotypes_dir/
-  chromosome=1/data.parquet
-  chromosome=2/data.parquet
-  ...
-  samples.txt
-
-GeneList.txt:
-  symbol<TAB>globalScore
-
-Example
--------
-python flatten_favor_for_gds.py \
-  --annotated-dir /path/merged_case1_case2_output.annotated \
-  --genotypes-dir /path/merged_case1_case2_output.genotypes \
-  --gene-list /path/GeneList.txt \
-  --sample-id Case1_proband \
-  --chromosome 1 \
-  --out Case1_proband_chr1.preview.parquet \
-  --preview-csv Case1_proband_chr1.preview.head.csv \
-  --summary-json Case1_proband_chr1.preview.summary.json
+The output is consumed by impact_snv/resources/favor_flat_to_seqarray_gds.R.
+It intentionally emits both modern IMPACT-SNV fields and the legacy field names
+required by the current R GDS writer.
 """
 
 from __future__ import annotations
@@ -52,31 +21,24 @@ import json
 import math
 import sys
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import pandas as pd
 import pyarrow.parquet as pq
 
 
-# -----------------------------
-# Basic helpers
-# -----------------------------
-
 def normalize_chrom(value: Any) -> str:
-    """Normalize chromosome labels to 1..22, X, Y, M/MT without chr prefix."""
     if value is None:
         return ""
     text = str(value)
     if text.lower().startswith("chr"):
         text = text[3:]
-    # Avoid rendering numeric chromosomes as "1.0"
     if text.endswith(".0"):
         text = text[:-2]
     return text
 
 
 def scalar_missing(value: Any) -> bool:
-    """Robust missing-value test for scalar-ish values."""
     if value is None:
         return True
     try:
@@ -86,38 +48,65 @@ def scalar_missing(value: Any) -> bool:
 
 
 def as_list(value: Any) -> List[Any]:
-    """Convert Arrow/Pandas list-like values to a normal Python list."""
     if value is None:
         return []
     if isinstance(value, list):
         return value
     if isinstance(value, tuple):
         return list(value)
-    # numpy arrays, pandas arrays, pyarrow list-like objects
     if hasattr(value, "tolist"):
         out = value.tolist()
-        if isinstance(out, list):
-            return out
-        return [out]
+        return out if isinstance(out, list) else [out]
     if scalar_missing(value):
         return []
     return [value]
 
 
 def clean_str(value: Any, default: str = "") -> str:
-    """Convert a scalar to a clean string, preserving empty default for missing."""
     if scalar_missing(value):
         return default
     return str(value)
 
 
+def numeric_or_none(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except Exception:
+        pass
+    try:
+        out = float(value)
+    except Exception:
+        return None
+    if math.isnan(out):
+        return None
+    return out
+
+
+def numeric_or_nan(value: Any) -> float:
+    out = numeric_or_none(value)
+    return float("nan") if out is None else float(out)
+
+
+def numeric_or_zero(value: Any) -> float:
+    out = numeric_or_none(value)
+    return 0.0 if out is None else float(out)
+
+
+def allele_frequency_to_maf(value: Any) -> Optional[float]:
+    af = numeric_or_none(value)
+    if af is None or af < 0 or af > 1:
+        return None
+    return float(min(af, 1.0 - af))
+
+
 def struct_get(value: Any, key: str, default: Any = None) -> Any:
-    """Read a key from a struct-like value produced by pyarrow -> pandas."""
     if value is None:
         return default
     if isinstance(value, dict):
         return value.get(key, default)
-    # Pandas may occasionally materialize structs as Series-like objects.
     try:
         return value[key]
     except Exception:
@@ -125,7 +114,6 @@ def struct_get(value: Any, key: str, default: Any = None) -> Any:
 
 
 def nested_get(value: Any, keys: Sequence[str], default: Any = None) -> Any:
-    """Read nested struct keys from a dict/Series-like value."""
     current = value
     for key in keys:
         current = struct_get(current, key, default=None)
@@ -134,18 +122,16 @@ def nested_get(value: Any, keys: Sequence[str], default: Any = None) -> Any:
     return current
 
 
-def collapse_list(value: Any, sep: str = "|") -> str:
-    """Collapse a scalar/list-like value to a delimiter-separated string."""
-    values = [clean_str(x) for x in as_list(value) if not scalar_missing(x) and clean_str(x) != ""]
-    return sep.join(values)
+def collapse_list(value: Any, sep: str = ";") -> str:
+    vals = []
+    for x in as_list(value):
+        sx = clean_str(x)
+        if sx:
+            vals.append(sx)
+    return sep.join(vals)
 
-
-# -----------------------------
-# Gene list handling
-# -----------------------------
 
 def load_gene_list(path: Path) -> Dict[str, float]:
-    """Load GeneList.txt as {HGNC symbol: globalScore}."""
     if not path.exists():
         raise FileNotFoundError(f"Gene list not found: {path}")
     df = pd.read_csv(path, sep="\t")
@@ -158,18 +144,13 @@ def load_gene_list(path: Path) -> Dict[str, float]:
         symbol = clean_str(row["symbol"]).strip()
         if not symbol:
             continue
-        try:
-            score = float(row["globalScore"])
-        except Exception:
-            score = float("nan")
-        out[symbol] = score
+        out[symbol] = numeric_or_nan(row["globalScore"])
     if not out:
         raise ValueError(f"Gene list contained no usable symbols: {path}")
     return out
 
 
 def matched_genes_from_gencode(gencode_value: Any, gene_scores: Dict[str, float]) -> Tuple[List[str], List[float]]:
-    """Return GeneList genes present in gencode.genes."""
     genes = [clean_str(x).strip() for x in as_list(struct_get(gencode_value, "genes", []))]
     genes = [g for g in genes if g]
     matched = [g for g in genes if g in gene_scores]
@@ -178,150 +159,170 @@ def matched_genes_from_gencode(gencode_value: Any, gene_scores: Dict[str, float]
 
 
 def best_gene(matched: Sequence[str], scores: Sequence[float]) -> Tuple[str, float]:
-    """Pick the highest-scoring matched gene for deterministic single-gene fields."""
     if not matched:
         return "", float("nan")
-    # If scores are NA, push them to the bottom but keep deterministic ordering.
     idx = max(range(len(matched)), key=lambda i: (-1 if math.isnan(scores[i]) else scores[i], matched[i]))
-    return matched[idx], scores[idx]
+    return matched[idx], float(scores[idx])
 
 
-# -----------------------------
-# FAVOR-to-legacy annotation mapping
-# -----------------------------
+def extract_maf_from_annotation_row(row: pd.Series) -> float:
+    candidates = [
+        row.get("bravo_af"),
+        row.get("gnomad_genome_af"),
+        row.get("gnomad_exome_af"),
+        nested_get(row.get("bravo"), ["bravo_af"]),
+        nested_get(row.get("gnomad_genome"), ["af"]),
+        nested_get(row.get("gnomad_exome"), ["af"]),
+    ]
+    for value in candidates:
+        maf = allele_frequency_to_maf(value)
+        if maf is not None:
+            return maf
+    return 0.0
+
+
+def extract_af(row: pd.Series, top_level: str, nested_col: str, nested_key: str) -> float:
+    value = row.get(top_level)
+    if value is None:
+        value = nested_get(row.get(nested_col), [nested_key])
+    return numeric_or_nan(value)
+
+
+def first_nonempty(*values: Any, default: str = "") -> str:
+    for value in values:
+        s = clean_str(value)
+        if s:
+            return s
+    return default
+
 
 def map_legacy_exonic_category(consequence: Any, ref: Any = None, alt: Any = None) -> str:
-    """
-    Map FAVOR consequence-like strings to legacy IMPACT category terms.
-
-    This is intentionally conservative. If no known mapping is found, returns the
-    raw consequence string so we can inspect and expand the map later.
-    """
-    c = clean_str(consequence).strip()
-    lc = c.lower().replace("_", " ").replace("-", " ")
-
-    if not lc:
-        return ""
-    if any(x in lc for x in ["stopgain", "stop gained", "stop gained", "nonsense"]):
+    text = collapse_list(consequence, sep=";").lower()
+    if not text:
+        return "unknown"
+    if "stop_gained" in text or "nonsense" in text:
         return "stopgain"
-    if any(x in lc for x in ["stoploss", "stop lost", "stop lost"]):
-        return "stoploss"
-    if "frameshift" in lc:
-        # If ref/alt lengths are available, infer insertion/deletion direction.
-        r = clean_str(ref)
-        a = clean_str(alt)
-        if r and a and len(a) > len(r):
-            return "frameshift insertion"
-        if r and a and len(r) > len(a):
-            return "frameshift deletion"
-        return "frameshift deletion"
-    if any(x in lc for x in ["missense", "nonsynonymous"]):
+    if "frameshift" in text:
+        return "frameshift"
+    if "missense" in text or "nonsynonymous" in text:
         return "nonsynonymous SNV"
-    if "inframe" in lc or "nonframeshift" in lc:
-        r = clean_str(ref)
-        a = clean_str(alt)
-        if r and a and len(a) > len(r):
-            return "nonframeshift insertion"
-        if r and a and len(r) > len(a):
-            return "nonframeshift deletion"
-        return "nonframeshift insertion"
-    return c
+    if "synonymous" in text:
+        return "synonymous SNV"
+    if "splice" in text:
+        return "splicing"
+    if "inframe" in text:
+        return "nonframeshift"
+    return text[:200]
 
 
-def gencode_info_string(matched_genes: Sequence[str]) -> str:
-    """
-    Create a legacy-compatible gene info string.
+def get_variant_fields(row: pd.Series) -> Tuple[str, int, str, str]:
+    chrom = normalize_chrom(row.get("chromosome", row.get("chrom", "")))
+    pos = numeric_or_none(row.get("position"))
+    if pos is None:
+        pos = numeric_or_none(row.get("pos"))
+    ref = clean_str(row.get("ref_vcf", row.get("ref", "")))
+    alt = clean_str(row.get("alt_vcf", row.get("alt", "")))
+    return chrom, int(pos) if pos is not None else -1, ref, alt
 
-    Existing IMPACT prioritization code expects gene symbols and handles optional
-    (dist=...) decorations, so we emit GENE(dist=0) for matched genes.
-    """
-    return ",".join(f"{gene}(dist=0)" for gene in matched_genes)
+
+def extract_clnsig(row: pd.Series) -> str:
+    clinvar = row.get("clinvar")
+    return first_nonempty(
+        row.get("clnsig"),
+        row.get("clinvar_clnsig"),
+        nested_get(clinvar, ["clinical_significance"]),
+        nested_get(clinvar, ["clnsig"]),
+        nested_get(clinvar, ["CLNSIG"]),
+    )
+
+
+def extract_apc_protein_function(row: pd.Series) -> float:
+    apc = row.get("apc")
+    candidates = [
+        row.get("apc_protein_function_v3"),
+        row.get("apc_protein_function"),
+        nested_get(apc, ["protein_function_v3"]),
+        nested_get(apc, ["protein_function"]),
+        nested_get(apc, ["score"]),
+        nested_get(apc, ["v3"]),
+    ]
+    for value in candidates:
+        out = numeric_or_none(value)
+        if out is not None:
+            return float(out)
+    return 0.0
 
 
 def flatten_annotation_row(row: pd.Series, gene_scores: Dict[str, float]) -> Optional[Dict[str, Any]]:
-    """Flatten one FAVOR annotation row; return None if it has no GeneList match."""
     gencode = row.get("gencode")
     matched, scores = matched_genes_from_gencode(gencode, gene_scores)
     if not matched:
         return None
 
+    chrom, pos, ref, alt = get_variant_fields(row)
+    if pos < 0 or not ref or not alt:
+        return None
+
     best, best_score = best_gene(matched, scores)
-    ref = row.get("ref_vcf")
-    alt = row.get("alt_vcf")
+    consequence = struct_get(gencode, "consequence")
+    region_type = clean_str(struct_get(gencode, "region_type"))
+    exonic_category = map_legacy_exonic_category(consequence, ref, alt)
+    genes_joined = ";".join(matched)
+    scores_joined = ";".join("" if math.isnan(s) else str(float(s)) for s in scores)
 
-    refseq = row.get("refseq")
-    ucsc = row.get("ucsc")
-    clinvar = row.get("clinvar")
-    dbsnp = row.get("dbsnp")
-    apc = row.get("apc")
-    spliceai = row.get("spliceai")
-    alphamissense = row.get("alphamissense")
-    dbnsfp = row.get("dbnsfp")
-    gnomad_genome = row.get("gnomad_genome")
-    gnomad_exome = row.get("gnomad_exome")
-    bravo = row.get("bravo")
-    tg = row.get("tg")
-    main = row.get("main")
-    input_struct = row.get("input")
+    bravo_af = extract_af(row, "bravo_af", "bravo", "bravo_af")
+    gnomad_genome_af = extract_af(row, "gnomad_genome_af", "gnomad_genome", "af")
+    gnomad_exome_af = extract_af(row, "gnomad_exome_af", "gnomad_exome", "af")
+    vid = first_nonempty(row.get("vid"), default=f"{chrom}:{pos}:{ref}:{alt}")
+    variant_vcf = first_nonempty(row.get("variant_vcf"), default=f"{chrom}:{pos}:{ref}:{alt}")
+    transcript_info = collapse_list(struct_get(gencode, "transcripts"), sep=";")
+    clnsig = extract_clnsig(row)
+    apc_pf = extract_apc_protein_function(row)
 
-    gencode_consequence = struct_get(gencode, "consequence", "")
-    refseq_consequence = struct_get(refseq, "consequence", "")
-    ucsc_consequence = struct_get(ucsc, "consequence", "")
-
-    clnsig = collapse_list(struct_get(clinvar, "clnsig", []), sep="\\")
-    clndn = collapse_list(struct_get(clinvar, "clndn", []), sep="|")
-
-    rsid = clean_str(struct_get(input_struct, "rsid", ""))
-    if not rsid:
-        rsid = clean_str(struct_get(dbsnp, "rsid", ""))
-
-    out = {
-        "chromosome": normalize_chrom(row.get("chromosome")),
-        "position": int(row.get("position")),
-        "ref": clean_str(ref),
-        "alt": clean_str(alt),
-        "allele": f"{clean_str(ref)},{clean_str(alt)}",
-        "vid": row.get("vid"),
-        "variant_vcf": clean_str(row.get("variant_vcf")),
-        "rsid": rsid,
-        "qual": clean_str(struct_get(input_struct, "qual", "")),
-        "filter": clean_str(struct_get(input_struct, "filter", "")),
+    return {
+        "chromosome": chrom,
+        "position": pos,
+        "ref": ref,
+        "alt": alt,
+        "allele": alt,
+        # variant_id is filled with a sequential integer after sample/chrom filtering.
+        "vid": vid,
+        "variant_vcf": variant_vcf,
+        "maf": extract_maf_from_annotation_row(row),
+        "bravo_af": bravo_af,
+        "gnomad_genome_af": gnomad_genome_af,
+        "gnomad_exome_af": gnomad_exome_af,
+        "gene": best,
+        "genes": genes_joined,
+        "matched_genes": genes_joined,
         "matched_gene": best,
         "matched_gene_score": best_score,
-        "matched_gene_all": "|".join(matched),
-        "matched_gene_score_all": "|".join("" if math.isnan(s) else str(s) for s in scores),
+        "matched_gene_all": genes_joined,
+        "matched_gene_score_all": scores_joined,
         "matched_gene_source": "gencode.genes",
-        "gencode_genes": collapse_list(struct_get(gencode, "genes", []), sep="|"),
-        "gencode_region_type": clean_str(struct_get(gencode, "region_type", "")),
-        "gencode_consequence": clean_str(gencode_consequence),
-        "refseq_consequence": clean_str(refseq_consequence),
-        "ucsc_consequence": clean_str(ucsc_consequence),
-        "genecode_comprehensive_info": gencode_info_string(matched),
-        "genecode_comprehensive_exonic_category": map_legacy_exonic_category(gencode_consequence, ref, alt),
-        "refseq_exonic_category": map_legacy_exonic_category(refseq_consequence, ref, alt),
-        "ucsc_exonic_category": map_legacy_exonic_category(ucsc_consequence, ref, alt),
+        "globalScore": best_score,
+        "global_score": best_score,
+        "gencode_genes": genes_joined,
+        "gencode_region_type": region_type,
+        "gencode_consequence": collapse_list(consequence, sep=";"),
+        "genecode_comprehensive_info": transcript_info if transcript_info else genes_joined,
+        "genecode_comprehensive_exonic_category": exonic_category,
+        "refseq_exonic_category": exonic_category,
+        "ucsc_exonic_category": exonic_category,
+        "Func_refGene": region_type,
+        "Gene_refGene": best,
+        "GeneDetail_refGene": genes_joined,
+        "ExonicFunc_refGene": exonic_category,
+        "AAChange_refGene": transcript_info,
         "clnsig": clnsig,
-        "clndn": clndn,
-        "clinvar_gene": clean_str(struct_get(clinvar, "gene", "")),
-        "apc_protein_function_v3": nested_get(apc, ["protein_function_v3"], float("nan")),
-        "spliceai_max_ds": nested_get(spliceai, ["max_ds"], float("nan")),
-        "alphamissense_max_pathogenicity": nested_get(alphamissense, ["max_pathogenicity"], float("nan")),
-        "revel": nested_get(dbnsfp, ["revel"], float("nan")),
-        "gnomad_genome_af": nested_get(gnomad_genome, ["af"], float("nan")),
-        "gnomad_exome_af": nested_get(gnomad_exome, ["af"], float("nan")),
-        "bravo_af": nested_get(bravo, ["bravo_af"], float("nan")),
-        "tg_all": nested_get(tg, ["tg_all"], float("nan")),
-        "cadd_phred": nested_get(main, ["cadd", "phred"], float("nan")),
+        "clinvar_clnsig": clnsig,
+        "apc_protein_function": apc_pf,
+        "apc_protein_function_v3": apc_pf,
+        "cadd_phred": numeric_or_nan(nested_get(row.get("main"), ["cadd", "phred"])),
     }
-    return out
 
-
-# -----------------------------
-# Parquet loading
-# -----------------------------
 
 def parquet_path(base_dir: Path, chrom: str) -> Path:
-    """Return chromosome parquet path."""
     chrom = normalize_chrom(chrom)
     path = base_dir / f"chromosome={chrom}" / "data.parquet"
     if not path.exists():
@@ -330,17 +331,13 @@ def parquet_path(base_dir: Path, chrom: str) -> Path:
 
 
 def read_parquet_file(path: Path, columns: Optional[Sequence[str]] = None) -> pd.DataFrame:
-    """
-    Read one physical parquet file without Hive partition inference.
-
-    This avoids pyarrow dataset partition type conflicts when the path includes
-    chromosome=... and the file also contains a chromosome column.
-    """
-    return pq.ParquetFile(path).read(columns=list(columns) if columns else None).to_pandas()
+    # Important: ParquetFile.read() avoids Hive partition inference from chromosome=*/.
+    pf = pq.ParquetFile(path)
+    table = pf.read(columns=list(columns) if columns else None)
+    return table.to_pandas()
 
 
 def load_samples(genotypes_dir: Path) -> List[str]:
-    """Load sample order from genotypes_dir/samples.txt."""
     samples_path = genotypes_dir / "samples.txt"
     if not samples_path.exists():
         raise FileNotFoundError(f"Missing samples.txt: {samples_path}")
@@ -351,7 +348,6 @@ def load_samples(genotypes_dir: Path) -> List[str]:
 
 
 def dosage_at(value: Any, sample_index: int) -> float:
-    """Extract one sample dosage from a fixed-size list value."""
     values = as_list(value)
     if sample_index >= len(values):
         raise IndexError(f"sample_index={sample_index} but dosage vector length is {len(values)}")
@@ -361,9 +357,37 @@ def dosage_at(value: Any, sample_index: int) -> float:
     return float(x)
 
 
-# -----------------------------
-# Main flattening logic
-# -----------------------------
+def normalize_key_columns(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    if "chromosome" not in out.columns:
+        if "chrom" in out.columns:
+            out["chromosome"] = out["chrom"]
+        elif "CHROM" in out.columns:
+            out["chromosome"] = out["CHROM"]
+    if "position" not in out.columns:
+        if "pos" in out.columns:
+            out["position"] = out["pos"]
+        elif "POS" in out.columns:
+            out["position"] = out["POS"]
+    if "ref" not in out.columns:
+        if "ref_vcf" in out.columns:
+            out["ref"] = out["ref_vcf"]
+        elif "REF" in out.columns:
+            out["ref"] = out["REF"]
+    if "alt" not in out.columns:
+        if "alt_vcf" in out.columns:
+            out["alt"] = out["alt_vcf"]
+        elif "ALT" in out.columns:
+            out["alt"] = out["ALT"]
+    for col in ("chromosome", "position", "ref", "alt"):
+        if col not in out.columns:
+            raise KeyError(col)
+    out["chromosome"] = out["chromosome"].map(normalize_chrom)
+    out["position"] = out["position"].astype("int64")
+    out["ref"] = out["ref"].map(clean_str)
+    out["alt"] = out["alt"].map(clean_str)
+    return out
+
 
 def flatten_one(
     annotated_dir: Path,
@@ -373,7 +397,6 @@ def flatten_one(
     chromosome: str,
     dosage_threshold: float,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-    """Flatten one sample/chromosome into a filtered table plus summary."""
     chrom = normalize_chrom(chromosome)
     gene_scores = load_gene_list(gene_list)
     samples = load_samples(genotypes_dir)
@@ -381,114 +404,174 @@ def flatten_one(
         raise ValueError(f"sample_id {sample_id!r} not found in samples.txt: {samples}")
     sample_index = samples.index(sample_id)
 
-    geno_path = parquet_path(genotypes_dir, chrom)
-    ann_path = parquet_path(annotated_dir, chrom)
+    ann_raw = read_parquet_file(parquet_path(annotated_dir, chrom))
+    geno_raw = read_parquet_file(parquet_path(genotypes_dir, chrom))
 
-    geno_cols = ["chromosome", "position", "ref", "alt", "maf", "dosages"]
-    geno = read_parquet_file(geno_path, columns=geno_cols)
-    total_genotype_rows = len(geno)
-    geno["chromosome"] = geno["chromosome"].map(normalize_chrom)
-    geno["dosage"] = geno["dosages"].map(lambda x: dosage_at(x, sample_index))
+    flat_ann_rows = []
+    for _, row in ann_raw.iterrows():
+        rec = flatten_annotation_row(row, gene_scores)
+        if rec is not None:
+            flat_ann_rows.append(rec)
+    ann = pd.DataFrame(flat_ann_rows) if flat_ann_rows else pd.DataFrame()
+    if not ann.empty:
+        ann = normalize_key_columns(ann)
+
+    geno = normalize_key_columns(geno_raw)
+    dosage_col = "dosages" if "dosages" in geno.columns else "dosage"
+    if dosage_col not in geno.columns:
+        raise KeyError("dosages")
+    geno["dosage"] = geno[dosage_col].map(lambda x: dosage_at(x, sample_index))
+    geno = geno[~geno["dosage"].isna()].copy()
     carried = geno[geno["dosage"] > dosage_threshold].copy()
-    carried_count = len(carried)
-    carried = carried.drop(columns=["dosages"])
 
-    ann_cols = [
-        "input", "vid", "chromosome", "position", "ref_vcf", "alt_vcf", "variant_vcf",
-        "gencode", "ucsc", "refseq", "dbsnp", "clinvar", "apc", "spliceai",
-        "alphamissense", "dbnsfp", "gnomad_genome", "gnomad_exome", "bravo", "tg", "main",
-    ]
-    ann = read_parquet_file(ann_path, columns=ann_cols)
-    total_annotation_rows = len(ann)
-
-    flattened_rows: List[Dict[str, Any]] = []
-    for _, row in ann.iterrows():
-        flat = flatten_annotation_row(row, gene_scores)
-        if flat is not None:
-            flattened_rows.append(flat)
-    ann_flat = pd.DataFrame(flattened_rows)
-    gene_matching_annotation_rows = len(ann_flat)
-
-    if ann_flat.empty or carried.empty:
-        out = pd.DataFrame()
+    join_cols = ["chromosome", "position", "ref", "alt"]
+    if ann.empty or carried.empty:
+        merged = pd.DataFrame(columns=required_output_columns())
     else:
-        carried_key = carried.rename(columns={"ref": "ref", "alt": "alt"})
-        ann_flat["chromosome"] = ann_flat["chromosome"].map(normalize_chrom)
-        out = carried_key.merge(
-            ann_flat,
-            on=["chromosome", "position", "ref", "alt"],
-            how="inner",
-            suffixes=("_geno", ""),
-        )
+        merged = carried.merge(ann, on=join_cols, how="inner", suffixes=("_gt", ""))
 
-    if not out.empty:
-        out.insert(0, "sample_id", sample_id)
-        out.insert(1, "variant_id", range(1, len(out) + 1))
-        # Keep preferred column order for easier validation and GDS writing.
-        preferred = [
-            "sample_id", "variant_id", "chromosome", "position", "ref", "alt", "allele",
-            "dosage", "maf", "vid", "variant_vcf", "rsid", "qual", "filter",
-            "matched_gene", "matched_gene_score", "matched_gene_all", "matched_gene_score_all", "matched_gene_source",
-            "gencode_genes", "gencode_region_type", "gencode_consequence",
-            "genecode_comprehensive_info", "genecode_comprehensive_exonic_category",
-            "refseq_exonic_category", "ucsc_exonic_category",
-            "clnsig", "clndn", "clinvar_gene", "apc_protein_function_v3",
-            "spliceai_max_ds", "alphamissense_max_pathogenicity", "revel",
-            "gnomad_genome_af", "gnomad_exome_af", "bravo_af", "tg_all", "cadd_phred",
-        ]
-        remaining = [c for c in out.columns if c not in preferred]
-        out = out[[c for c in preferred if c in out.columns] + remaining]
+    merged = finalize_flat_schema(merged, sample_id)
 
+    matched_genes = sorted(set(g for value in ann.get("matched_genes", []) for g in clean_str(value).split(";") if g)) if not ann.empty else []
+    rows_with_clnsig = int((merged.get("clnsig", pd.Series(dtype=str)).fillna("").astype(str) != "").sum()) if len(merged) else 0
+    rows_with_apc = int((merged.get("apc_protein_function_v3", pd.Series(dtype=float)).fillna(0).astype(float) != 0).sum()) if len(merged) else 0
     summary = {
         "sample_id": sample_id,
-        "sample_index": sample_index,
-        "samples": samples,
         "chromosome": chrom,
-        "gene_list": str(gene_list),
         "gene_count": len(gene_scores),
-        "dosage_threshold": dosage_threshold,
-        "genotype_path": str(geno_path),
-        "annotation_path": str(ann_path),
-        "total_genotype_rows": total_genotype_rows,
-        "carried_variants_for_sample": carried_count,
-        "total_annotation_rows": total_annotation_rows,
-        "gene_matching_annotation_rows": gene_matching_annotation_rows,
-        "final_carried_gene_matched_rows": len(out),
-        "rows_with_clnsig": int((out["clnsig"].fillna("") != "").sum()) if not out.empty and "clnsig" in out else 0,
-        "rows_with_apc_protein_function_v3": int(out["apc_protein_function_v3"].notna().sum()) if not out.empty and "apc_protein_function_v3" in out else 0,
-        "matched_genes_observed": sorted(out["matched_gene"].dropna().unique().tolist()) if not out.empty and "matched_gene" in out else [],
+        "total_genotype_rows": int(len(geno_raw)),
+        "carried_variants_for_sample": int(len(carried)),
+        "total_annotation_rows": int(len(ann_raw)),
+        "gene_matching_annotation_rows": int(len(ann)),
+        "final_carried_gene_matched_rows": int(len(merged)),
+        "rows_with_clnsig": rows_with_clnsig,
+        "rows_with_apc_protein_function": rows_with_apc,
+        "matched_genes_observed": matched_genes[:200],
     }
-    return out, summary
+    return merged, summary
 
 
-# -----------------------------
-# CLI
-# -----------------------------
+def required_output_columns() -> List[str]:
+    return [
+        "sample_id", "variant_id", "chromosome", "position", "ref", "alt", "allele",
+        "dosage", "maf", "vid", "variant_vcf", "matched_gene", "matched_gene_score",
+        "genecode_comprehensive_info", "genecode_comprehensive_exonic_category",
+        "refseq_exonic_category", "ucsc_exonic_category", "clnsig", "apc_protein_function_v3",
+    ]
+
+
+def finalize_flat_schema(df: pd.DataFrame, sample_id: str) -> pd.DataFrame:
+    out = df.copy()
+    n = len(out)
+    if "sample_id" not in out.columns:
+        out["sample_id"] = sample_id
+    if "allele" not in out.columns:
+        out["allele"] = out["alt"] if "alt" in out.columns else ""
+    if "maf" not in out.columns:
+        out["maf"] = 0.0
+    if "vid" not in out.columns:
+        out["vid"] = ""
+    if "variant_vcf" not in out.columns:
+        if all(c in out.columns for c in ["chromosome", "position", "ref", "alt"]):
+            out["variant_vcf"] = out["chromosome"].astype(str) + ":" + out["position"].astype(str) + ":" + out["ref"].astype(str) + ":" + out["alt"].astype(str)
+        else:
+            out["variant_vcf"] = ""
+    if "matched_gene" not in out.columns:
+        out["matched_gene"] = out["gene"] if "gene" in out.columns else ""
+    if "matched_gene_score" not in out.columns:
+        out["matched_gene_score"] = out["globalScore"] if "globalScore" in out.columns else float("nan")
+    if "genecode_comprehensive_info" not in out.columns:
+        out["genecode_comprehensive_info"] = out["GeneDetail_refGene"] if "GeneDetail_refGene" in out.columns else ""
+    if "genecode_comprehensive_exonic_category" not in out.columns:
+        out["genecode_comprehensive_exonic_category"] = out["ExonicFunc_refGene"] if "ExonicFunc_refGene" in out.columns else "unknown"
+    if "refseq_exonic_category" not in out.columns:
+        out["refseq_exonic_category"] = out["genecode_comprehensive_exonic_category"]
+    if "ucsc_exonic_category" not in out.columns:
+        out["ucsc_exonic_category"] = out["genecode_comprehensive_exonic_category"]
+    if "clnsig" not in out.columns:
+        out["clnsig"] = ""
+    if "apc_protein_function_v3" not in out.columns:
+        out["apc_protein_function_v3"] = 0.0
+
+    # variant_id must be integer-like for the current R writer. Assign sequential
+    # IDs per flat file; the R writer may reassign global IDs after read.
+    out["variant_id"] = range(1, n + 1)
+
+    # Normalize required scalar types.
+    str_cols = ["sample_id", "chromosome", "ref", "alt", "allele", "vid", "variant_vcf", "matched_gene",
+                "genecode_comprehensive_info", "genecode_comprehensive_exonic_category", "refseq_exonic_category",
+                "ucsc_exonic_category", "clnsig"]
+    for col in str_cols:
+        if col in out.columns:
+            out[col] = out[col].fillna("").astype(str)
+    for col in ["position", "variant_id"]:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce").fillna(0).astype("int64")
+    for col in ["dosage", "maf", "matched_gene_score", "apc_protein_function_v3"]:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce")
+            if col in ["dosage", "maf", "apc_protein_function_v3"]:
+                out[col] = out[col].fillna(0.0)
+
+    first = required_output_columns()
+    optional_first = [
+        "matched_gene_all", "matched_gene_score_all", "matched_gene_source", "gene", "genes", "matched_genes",
+        "globalScore", "global_score", "Func_refGene", "Gene_refGene", "GeneDetail_refGene", "ExonicFunc_refGene",
+        "AAChange_refGene", "clinvar_clnsig", "apc_protein_function", "bravo_af", "gnomad_genome_af",
+        "gnomad_exome_af", "tg_all", "gencode_genes", "gencode_region_type", "gencode_consequence", "cadd_phred",
+    ]
+    ordered = [c for c in first + optional_first if c in out.columns] + [c for c in out.columns if c not in first + optional_first]
+    return out[ordered]
+
+
+def write_outputs(df: pd.DataFrame, summary: Dict[str, Any], out: Path, preview_csv: Optional[Path], preview_rows: int, summary_json: Optional[Path]) -> None:
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(out, index=False, engine="pyarrow")
+    if preview_csv:
+        preview_csv.parent.mkdir(parents=True, exist_ok=True)
+        df.head(preview_rows).to_csv(preview_csv, index=False)
+    if summary_json:
+        summary_json.parent.mkdir(parents=True, exist_ok=True)
+        summary_json.write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def print_summary(out: Path, summary: Dict[str, Any]) -> None:
+    print("Flatten preview completed")
+    print(f"output:                          {out}")
+    for key in [
+        "sample_id", "chromosome", "gene_count", "total_genotype_rows", "carried_variants_for_sample",
+        "total_annotation_rows", "gene_matching_annotation_rows", "final_carried_gene_matched_rows",
+        "rows_with_clnsig", "rows_with_apc_protein_function",
+    ]:
+        print(f"{key + ':':32} {summary.get(key)}")
+    genes = summary.get("matched_genes_observed") or []
+    text = ", ".join(genes[:20]) + (", ..." if len(genes) > 20 else "") if genes else "none"
+    print(f"matched_genes_observed:          {text}")
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Create a flat preview/intermediate table from FAVOR annotated + genotype parquet for one sample/chromosome.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--annotated-dir", required=True, type=Path, help="FAVOR annotated output directory")
-    parser.add_argument("--genotypes-dir", required=True, type=Path, help="FAVOR genotype output directory")
-    parser.add_argument("--gene-list", required=True, type=Path, help="GeneList.txt with symbol and globalScore columns")
-    parser.add_argument("--sample-id", required=True, help="Sample ID to extract, as listed in genotypes_dir/samples.txt")
-    parser.add_argument("--chromosome", required=True, help="Chromosome to process, e.g. 1, 22, X, Y")
-    parser.add_argument("--dosage-threshold", type=float, default=0.0, help="Keep variants with dosage > threshold")
-    parser.add_argument("--out", required=True, type=Path, help="Output flattened parquet path")
-    parser.add_argument("--preview-csv", type=Path, help="Optional CSV containing the first --preview-rows rows")
-    parser.add_argument("--preview-rows", type=int, default=50, help="Rows to write to --preview-csv")
-    parser.add_argument("--summary-json", type=Path, help="Optional JSON summary path")
+    parser.add_argument("--annotated-dir", required=True, type=Path)
+    parser.add_argument("--genotypes-dir", required=True, type=Path)
+    parser.add_argument("--gene-list", required=True, type=Path)
+    parser.add_argument("--sample-id", required=True)
+    parser.add_argument("--chromosome", required=True)
+    parser.add_argument("--dosage-threshold", type=float, default=0.0)
+    parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--preview-csv", type=Path)
+    parser.add_argument("--preview-rows", type=int, default=50)
+    parser.add_argument("--summary-json", type=Path)
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     try:
-        flat, summary = flatten_one(
+        df, summary = flatten_one(
             annotated_dir=args.annotated_dir,
             genotypes_dir=args.genotypes_dir,
             gene_list=args.gene_list,
@@ -496,41 +579,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             chromosome=args.chromosome,
             dosage_threshold=args.dosage_threshold,
         )
+        write_outputs(df, summary, args.out, args.preview_csv, args.preview_rows, args.summary_json)
+        print_summary(args.out, summary)
+        return 0
     except Exception as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
-
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    flat.to_parquet(args.out, index=False, engine="pyarrow")
-
-    if args.preview_csv:
-        args.preview_csv.parent.mkdir(parents=True, exist_ok=True)
-        flat.head(args.preview_rows).to_csv(args.preview_csv, index=False)
-
-    if args.summary_json:
-        args.summary_json.parent.mkdir(parents=True, exist_ok=True)
-        args.summary_json.write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
-
-    print("Flatten preview completed")
-    print(f"  output:                          {args.out}")
-    print(f"  sample_id:                       {summary['sample_id']}")
-    print(f"  chromosome:                      {summary['chromosome']}")
-    print(f"  gene_count:                      {summary['gene_count']}")
-    print(f"  total_genotype_rows:             {summary['total_genotype_rows']}")
-    print(f"  carried_variants_for_sample:     {summary['carried_variants_for_sample']}")
-    print(f"  total_annotation_rows:           {summary['total_annotation_rows']}")
-    print(f"  gene_matching_annotation_rows:   {summary['gene_matching_annotation_rows']}")
-    print(f"  final_carried_gene_matched_rows: {summary['final_carried_gene_matched_rows']}")
-    print(f"  rows_with_clnsig:                {summary['rows_with_clnsig']}")
-    print(f"  rows_with_apc_protein_function:  {summary['rows_with_apc_protein_function_v3']}")
-    if summary["matched_genes_observed"]:
-        preview = ", ".join(summary["matched_genes_observed"][:20])
-        if len(summary["matched_genes_observed"]) > 20:
-            preview += ", ..."
-        print(f"  matched_genes_observed:          {preview}")
-    else:
-        print("  matched_genes_observed:          none")
-    return 0
 
 
 if __name__ == "__main__":

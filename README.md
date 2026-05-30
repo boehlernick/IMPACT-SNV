@@ -2,11 +2,20 @@
 
 **Integrated Mapping of Phenotype-Associated Candidate Targets for SNV/Indel Analysis**
 
-This repository contains the IMPACT-SNV pipeline, which processes and prioritizes single nucleotide variants (SNVs) and indels for rare disease analysis using the FAVOR database and phenotype-specific gene-disease associations.
+This repository contains the IMPACT-SNV pipeline, which processes and prioritizes single nucleotide variants (SNVs) and indels using FAVOR-based annotation and phenotype-specific gene-disease associations.
 
 ## Overview
 
 IMPACT-SNV is part of the broader IMPACT framework for phenotype-configurable interpretation of genomic variants. This module specifically handles SNV/Indel processing and produces output files compatible with [IMPACT-VIS](https://boehlernick.github.io/IMPACT-VIS) for interactive visualization and analysis.
+
+
+### Why FAVOR?
+
+IMPACT-SNV currently uses `favorannotator` and the FAVOR database for SNV/indel annotation. FAVOR was selected because it provides a large precomputed and harmonized annotation resource suitable for WGS-scale variant prioritization. The annotation set includes population allele frequencies, transcript consequences, conservation metrics, ClinVar assertions, regulatory annotations, and aggregate protein impact metrics.
+
+In IMPACT-SNV, FAVOR annotations are appended to GDS/aGDS files generated from VCF inputs, allowing large variant datasets to be stored, queried, and prioritized efficiently. This design fits the workflow’s goal of scalable phenotype-driven prioritization across WGS-derived variant calls.
+
+A FAVOR-CLI-compatible implementation is being developed as a backwards-compatible modernization of the annotation step. This refactor is intended to preserve the existing IMPACT-SNV prioritization logic and output contract while supporting the forthcoming FAVOR 2.0 database once it is publicly released later in 2026.
 
 ## Pipeline Architecture
 
@@ -21,7 +30,7 @@ VCF Files → [Step 1: Merge] → [Step 2: VCF2GDS] → [Step 3: FAVOR Annotate]
 | 1 | `step1_vcf_merge/` | Merges multiple VCF files into chromosome-separated files | `.vcf`, `.vcf.gz` | `merged_chr*.vcf.gz` |
 | 2 | `step2_vcf2gds/` | Converts VCF to GDS format for efficient processing | `.vcf.gz` | `merged_chr*.gds` |
 | 3 | `step3_favorannotator-rap/` | Annotates variants using FAVOR database | `.gds` | `favor_merged_chr*.gds` |
-| 4 | `step4_impact_prioritization/` | Scores and prioritizes variants by pathogenicity | `.gds`, `GeneList.txt` | `*_SNV_IMPACT.gds` |
+| 4 | `step4_impact_prioritization/` | Scores and prioritizes variants | `.gds`, `GeneList.txt` | `*_SNV_IMPACT.gds` |
 
 ## Requirements
 
@@ -74,7 +83,7 @@ The final `*_SNV_IMPACT.gds` files contain:
 ### IMPACT Score Annotations
 | Node | Type | Description |
 |------|------|-------------|
-| `annotation/info/impact_score` | numeric | Pathogenicity score (0-100) |
+| `annotation/info/impact_score` | numeric | Prioritization score (0-100) |
 | `annotation/info/impact_score_calc` | character | Tier and calculation formula |
 | `annotation/info/tier` | integer | Priority tier (1-4) |
 
@@ -186,7 +195,7 @@ Generate this file by:
 
 ## Refactor Planning and Contracts
 
-The IMPACT-SNV pipeline is undergoing a phased refactor to replace the legacy FAVORannotator-based annotation step with a modern FAVOR-CLI-backed adapter, while preserving the existing prioritization logic and output contract.
+The current IMPACT-SNV production workflow uses `favorannotator`. The pipeline is undergoing a phased, backwards-compatible refactor to add a modern FAVOR-CLI-backed annotation adapter while preserving the existing prioritization logic and output contract.
 
 For developers and contributors, comprehensive documentation is available:
 
