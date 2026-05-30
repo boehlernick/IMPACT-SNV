@@ -15,26 +15,31 @@
 # Deprecated patho_score/patho_score_calc nodes are intentionally NOT generated.
 # All scoring logic writes directly to impact_score/impact_score_calc.
 
-suppressPackageStartupMessages({
-  if (!requireNamespace("optparse", quietly = TRUE)) stop("Package 'optparse' is required.")
-  if (!requireNamespace("SeqArray", quietly = TRUE)) stop("Bioconductor package 'SeqArray' is required.")
-  if (!requireNamespace("gdsfmt", quietly = TRUE)) stop("Bioconductor package 'gdsfmt' is required.")
-  if (!requireNamespace("stringi", quietly = TRUE)) stop("Package 'stringi' is required.")
-  library(optparse)
-  library(SeqArray)
-  library(gdsfmt)
-  library(stringi)
-})
+require_runtime_packages <- function(include_cli = FALSE) {
+  if (include_cli && !requireNamespace("optparse", quietly = TRUE)) {
+    stop("Package 'optparse' is required.")
+  }
+  if (!requireNamespace("SeqArray", quietly = TRUE)) {
+    stop("Bioconductor package 'SeqArray' is required.")
+  }
+  if (!requireNamespace("gdsfmt", quietly = TRUE)) {
+    stop("Bioconductor package 'gdsfmt' is required.")
+  }
+}
 
-option_list <- list(
-  make_option(c("-i", "--input-gds"), dest = "input_gds", type = "character", help = "Input pre-prioritization GDS"),
-  make_option(c("-g", "--gene-list"), dest = "gene_list", type = "character", help = "GeneList.txt with symbol and globalScore columns"),
-  make_option(c("-o", "--output-gds"), dest = "output_gds", type = "character", help = "Output finalized *_SNV_IMPACT.gds"),
-  make_option(c("--force"), dest = "force", action = "store_true", default = FALSE, help = "Overwrite output GDS if it exists"),
-  make_option(c("--no-optimize"), dest = "no_optimize", action = "store_true", default = FALSE, help = "Skip seqOptimize() after adding scoring nodes"),
-  make_option(c("--verbose"), dest = "verbose", action = "store_true", default = FALSE, help = "Print additional information")
-)
-opt <- parse_args(OptionParser(option_list = option_list))
+build_option_list <- function() {
+  list(
+    optparse::make_option(c("-i", "--input-gds"), dest = "input_gds", type = "character", help = "Input pre-prioritization GDS"),
+    optparse::make_option(c("-g", "--gene-list"), dest = "gene_list", type = "character", help = "GeneList.txt with symbol and globalScore columns"),
+    optparse::make_option(c("-o", "--output-gds"), dest = "output_gds", type = "character", help = "Output finalized *_SNV_IMPACT.gds"),
+    optparse::make_option(c("--force"), dest = "force", action = "store_true", default = FALSE, help = "Overwrite output GDS if it exists"),
+    optparse::make_option(c("--no-optimize"), dest = "no_optimize", action = "store_true", default = FALSE, help = "Skip seqOptimize() after adding scoring nodes"),
+    optparse::make_option(c("--verbose"), dest = "verbose", action = "store_true", default = FALSE, help = "Print additional information")
+  )
+}
+
+TIER2_EXONIC_CLASSES <- c("frameshift", "frameshift_insertion", "frameshift_deletion", "stopgain")
+TIER3_EXONIC_CLASSES <- c("nonsynonymous", "nonframeshift", "nonframeshift_insertion", "nonframeshift_deletion", "stoploss")
 
 fail <- function(...) stop(paste0(...), call. = FALSE)
 msg <- function(...) cat(paste0(..., "\n"))
@@ -103,9 +108,62 @@ has_clinvar <- function(clnsig, labels) {
   }, logical(1L))
 }
 
-category_any <- function(categories, include) {
-  include_l <- tolower(include)
-  Reduce(`|`, lapply(categories, function(x) tolower(as_chr(x)) %in% include_l))
+normalize_exonic_category_chunks <- function(x) {
+  x <- as_chr(x)
+  chunks <- unlist(strsplit(x, "\\||;|,|/", perl = TRUE), use.names = FALSE)
+  chunks <- tolower(chunks)
+  chunks <- gsub("[_-]+", " ", chunks, perl = TRUE)
+  chunks <- gsub("[[:space:]]+", " ", chunks, perl = TRUE)
+  chunks <- trimws(chunks)
+  chunks[chunks != "" & chunks != "na"]
+}
+
+classify_exonic_category <- function(x) {
+  chunks <- normalize_exonic_category_chunks(x)
+  out <- character(0)
+  for (chunk in chunks) {
+    if (grepl("\\bstop\\s*gain(?:ed)?\\b|\\bnonsense\\b", chunk, perl = TRUE)) {
+      out <- c(out, "stopgain")
+    }
+    if (grepl("\\bstop\\s*loss\\b|\\bstop\\s*lost\\b", chunk, perl = TRUE)) {
+      out <- c(out, "stoploss")
+    }
+    if (grepl("\\bnonframeshift\\b|\\binframe\\b", chunk, perl = TRUE)) {
+      if (grepl("\\binsertion\\b", chunk, perl = TRUE)) {
+        out <- c(out, "nonframeshift_insertion")
+      } else if (grepl("\\bdeletion\\b", chunk, perl = TRUE)) {
+        out <- c(out, "nonframeshift_deletion")
+      } else {
+        out <- c(out, "nonframeshift")
+      }
+    }
+    if (grepl("\\bframeshift\\b", chunk, perl = TRUE)) {
+      if (grepl("\\binsertion\\b", chunk, perl = TRUE)) {
+        out <- c(out, "frameshift_insertion")
+      } else if (grepl("\\bdeletion\\b", chunk, perl = TRUE)) {
+        out <- c(out, "frameshift_deletion")
+      } else {
+        out <- c(out, "frameshift")
+      }
+    }
+    if (grepl("\\bnonsynonymous\\b|\\bmissense\\b", chunk, perl = TRUE)) {
+      out <- c(out, "nonsynonymous")
+    }
+    if (grepl("\\bsynonymous\\b", chunk, perl = TRUE)) {
+      out <- c(out, "synonymous")
+    }
+    if (grepl("\\bsplic", chunk, perl = TRUE)) {
+      out <- c(out, "splicing")
+    }
+  }
+  unique(out)
+}
+
+category_has_class <- function(categories, include) {
+  include_l <- unique(include)
+  Reduce(`|`, lapply(categories, function(x) {
+    vapply(as_chr(x), function(entry) any(classify_exonic_category(entry) %in% include_l), logical(1L))
+  }))
 }
 
 ensure_info_folder <- function(gds) {
@@ -188,8 +246,8 @@ score_variants <- function(gds, gene_scores, verbose = FALSE) {
 
   category_set <- list(gencode_cat, refseq_cat, ucsc_cat)
   tier1 <- has_clinvar(clnsig, c("pathogenic", "likely pathogenic")) & gene_score > 0
-  tier2 <- category_any(category_set, c("frameshift insertion", "frameshift deletion", "stopgain")) & gene_score > 0
-  tier3 <- category_any(category_set, c("nonsynonymous SNV", "nonframeshift deletion", "nonframeshift insertion", "stoploss")) & gene_score > 0
+  tier2 <- category_has_class(category_set, TIER2_EXONIC_CLASSES) & gene_score > 0
+  tier3 <- category_has_class(category_set, TIER3_EXONIC_CLASSES) & gene_score > 0
   tier4 <- apc > 1 & gene_score > 0
   apc_norm <- pmin(apc, 40) / 40
 
@@ -259,7 +317,9 @@ copy_input <- function(input_gds, output_gds, force = FALSE) {
   if (!ok) fail("Could not copy input GDS to output: ", output_gds)
 }
 
-main <- function() {
+main <- function(argv = commandArgs(trailingOnly = TRUE)) {
+  require_runtime_packages(include_cli = TRUE)
+  opt <- optparse::parse_args(optparse::OptionParser(option_list = build_option_list()), args = argv)
   if (is.null(opt$input_gds) || is.null(opt$output_gds) || is.null(opt$gene_list)) {
     fail("--input-gds, --output-gds, and --gene-list are required")
   }
@@ -293,4 +353,7 @@ main <- function() {
   msg("  max impact_score:             ", signif(summary$max_impact_score, 6))
   msg("Done: ", opt$output_gds)
 }
-main()
+
+if (sys.nframe() == 0) {
+  main()
+}

@@ -59,9 +59,10 @@ Current responsibilities:
 - Normalize and split multiallelic variants using `bcftools norm`.
 - Split merged VCF by chromosome.
 
-Known current limitation:
+Current implementation note:
 
-- Chromosome splitting is currently autosome-oriented and should be generalized to support `1-22`, `X`, and `Y`.
+- Chromosome splitting now supports `1-22`, `X`, and `Y`.
+- Existing autosome behavior remains the compatibility baseline that later milestones must preserve.
 
 ### Step 2: VCF to GDS Conversion
 

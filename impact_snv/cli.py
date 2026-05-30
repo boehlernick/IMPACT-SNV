@@ -9,7 +9,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Sequence
 
-DEFAULT_VERSION = "1.0.0a0"
+from impact_snv import __version__
+
+
 QC_MODES = ("warn", "strict", "off")
 
 
@@ -61,7 +63,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="IMPACT-SNV production CLI for SNV/indel processing through IMPACT-VIS-ready GDS output.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--version", action="version", version=f"impact-snv {DEFAULT_VERSION}")
+    parser.add_argument("--version", action="version", version=f"impact-snv {__version__}")
     subparsers = parser.add_subparsers(dest="command", metavar="COMMAND", required=True)
     add_merge_parser(subparsers)
     add_favor_ingest_parser(subparsers)
@@ -138,11 +140,23 @@ def add_extract_genotypes_parser(subparsers: argparse._SubParsersAction) -> None
 
 def add_favor_annotate_parser(subparsers: argparse._SubParsersAction) -> None:
     p = subparsers.add_parser("favor-annotate", help="Run FAVOR CLI annotate using the tested IMPACT-SNV contract.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    p.add_argument("--ingested-dir", required=True, type=_existing_dir)
+    p.add_argument("--backend", choices=["favor-cli", "legacy-favorannotator", "favor-cli-skeleton"], default="favor-cli")
+    p.add_argument("--ingested-dir", type=_existing_dir)
     p.add_argument("--out-dir", required=True, type=_path)
-    p.add_argument("--out-prefix", required=True)
+    p.add_argument("--out-prefix")
     p.add_argument("--reference-build", default="GRCh38", choices=["GRCh38"])
     p.add_argument("--favor-bin", default="favor")
+    p.add_argument("--legacy-annotated-dir", type=_existing_dir)
+    p.add_argument("--legacy-genotypes-dir", type=_existing_dir)
+    p.add_argument("--legacy-stage-mode", choices=["symlink", "copy", "none"], default="symlink")
+    p.add_argument("--skeleton-input-file", type=_existing_file)
+    p.add_argument("--skeleton-input-type", choices=["gds", "vcf"], default="gds")
+    p.add_argument("--skeleton-dry-run", dest="skeleton_dry_run", action="store_true", default=True)
+    p.add_argument("--no-skeleton-dry-run", dest="skeleton_dry_run", action="store_false")
+    p.add_argument("--favor-database-file", type=_existing_file)
+    p.add_argument("--favor-database-version")
+    p.add_argument("--skeleton-threads", type=positive_int, default=4)
+    p.add_argument("--skeleton-memory-budget-gb", type=positive_int, default=8)
     p.add_argument("--force", action="store_true")
     p.add_argument("--manifest-json", type=_path)
     p.add_argument("--progress-interval-seconds", type=positive_int, default=60)

@@ -32,12 +32,12 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
+from impact_snv import __version__ as VERSION
 from impact_snv.gds.validate import GdsValidationResult, validate_gds_file
 
 
 PREPRIORITIZATION_SUFFIX = "_SNV_IMPACT.preprioritization.gds"
 FINAL_SUFFIX = "_SNV_IMPACT.gds"
-VERSION = "1.0.0a0"
 
 
 @dataclass

@@ -35,10 +35,10 @@ from typing import Any, Optional, Sequence
 import pandas as pd
 import pyarrow.parquet as pq
 
+from impact_snv import __version__ as VERSION
 from impact_snv.qc.build_qc import run_build_qc
 
 PREPRIORITIZATION_SUFFIX = "_SNV_IMPACT.preprioritization.gds"
-VERSION = "1.0.0a0"
 
 
 @dataclass

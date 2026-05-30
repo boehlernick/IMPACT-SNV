@@ -1,6 +1,6 @@
 [project]
 name = "impact-snv"
-version = "1.0.0a0"
+dynamic = ["version"]
 description = "IMPACT-SNV pipeline for SNV/indel processing, FAVOR annotation, GDS conversion, prioritization, and IMPACT-VIS output"
 requires-python = ">=3.10"
 dependencies = [
@@ -17,3 +17,6 @@ include = ["impact_snv*"]
 
 [tool.setuptools.package-data]
 impact_snv = ["resources/*.R"]
+
+[tool.setuptools.dynamic]
+version = {attr = "impact_snv.__version__"}

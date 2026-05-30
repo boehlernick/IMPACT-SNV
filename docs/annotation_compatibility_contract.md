@@ -78,6 +78,27 @@ Required compatibility namespace:
 annotation/info/FunctionalAnnotation/
 ```
 
+Recommended explicit compatibility/fallback reporting namespaces:
+
+```text
+annotation/info/IMPACT_AnnotationCompatibility/
+annotation/info/IMPACT_AnnotationProvenance/
+```
+
+Current implementation may include row-level compatibility fallback fields such as:
+
+```text
+impact_fallback_flags
+impact_fallback_count
+```
+
+and corresponding GDS nodes:
+
+```text
+annotation/info/IMPACT_AnnotationCompatibility/fallback_flags
+annotation/info/IMPACT_AnnotationCompatibility/fallback_count
+```
+
 The FAVOR-CLI adapter should inject normalized compatibility fields into this namespace so that current Step 4 code can continue to use `seqGetData()` against the expected paths.
 
 Future implementations may additionally store richer FAVOR-CLI-native annotation fields elsewhere, but that should not replace the compatibility namespace until Step 4 is intentionally redesigned.

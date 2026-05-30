@@ -24,7 +24,7 @@ The current IMPACT-SNV workflow is organized as four sequential steps:
 Input VCF / VCF.GZ files
 → Step 1: VCF merge, normalization, and chromosome split
 → Step 2: VCF-to-GDS conversion
-→ Step 3: legacy FAVORannotator annotation
+→ Step 3: backend-selected annotation (legacy FAVORannotator compatibility or FAVOR-CLI path)
 → Step 4: IMPACT variant prioritization
 → Final per-sample *_SNV_IMPACT.gds files
 ```
@@ -35,6 +35,8 @@ Current step folders:
 step1_vcf_merge/
 step2_vcf2gds/
 Step3_favorannotator-rap/
+step3_favorcli_annotation/
+impact_snv/favor/
 step4_impact_prioritization/
 ```
 
@@ -168,7 +170,31 @@ Target refactor note:
 
 Step 2 should remain mostly stable during the initial FAVOR-CLI refactor. If X/Y VCF files are produced by Step 1, Step 2 should process them through the same conversion path where possible.
 
-## Step 3: Legacy FAVORannotator Annotation
+## Step 3: Annotation Backends
+
+Current implementation includes a backend selector in:
+
+```text
+impact_snv/favor/annotate.py
+```
+
+exposed by:
+
+```text
+impact-snv favor-annotate --backend ...
+```
+
+Current backend values:
+
+```text
+favor-cli
+legacy-favorannotator
+favor-cli-skeleton
+```
+
+The default remains `favor-cli`.
+
+### Step 3A: Legacy FAVORannotator Compatibility Backend
 
 Folder:
 
@@ -242,15 +268,34 @@ annotation/info/FunctionalAnnotation/ucsc_exonic_category
 annotation/info/FunctionalAnnotation/apc_protein_function_v3
 ```
 
+Current compatibility note:
+
+The legacy Step 3 should not be deleted or rewritten at this stage. The compatibility backend wraps legacy outputs and stages them into canonical paths for downstream build/finalize steps.
+It does not imply that `impact-snv favor-annotate --backend legacy-favorannotator` locally executes the DNAnexus FAVORannotator applet.
+
+### Step 3B: FAVOR-CLI Path
+
+Current FAVOR-CLI-related modules:
+
+```text
+impact_snv/favor/ingest.py
+impact_snv/favor/annotate.py
+step3_favorcli_annotation/
+```
+
+`favor-cli-skeleton` currently supports dry-run integration only and does not claim Step 4-ready scientific equivalence.
+
+Native FAVOR `.cohort` or FAVOR-generated genotype outputs remain experimental/discovery-only and are not part of the v1.0.0 release gate. The supported release path is FAVOR annotation-only plus `impact-snv extract-genotypes`, followed by `build-gds`, `finalize-gds`, and `validate-gds`.
+
 Target refactor note:
 
-The legacy Step 3 should not be deleted or rewritten at the start of the refactor. A new FAVOR-CLI-backed annotation path should be added alongside it, likely under:
+A production FAVOR-CLI-backed annotation adapter should continue to evolve under:
 
 ```text
 step3_favorcli_annotation/
 ```
 
-The new FAVOR-CLI path should eventually produce GDS files that satisfy the same Step 4 annotation compatibility contract.
+The FAVOR-CLI path must produce outputs that satisfy the same Step 4 annotation compatibility contract before it can replace legacy production usage.
 
 ## Step 4: IMPACT Variant Prioritization
 

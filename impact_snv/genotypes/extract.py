@@ -45,9 +45,11 @@ from typing import Any, Optional, Sequence
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from impact_snv import __version__ as VERSION
+from impact_snv.genotypes.contract import validate_genotypes_layout
+
 SUPPORTED_REFERENCE_BUILDS = {"GRCh38"}
 DEFAULT_CHROMS = [str(i) for i in range(1, 23)] + ["X", "Y"]
-VERSION = "1.0.0a0"
 
 
 @dataclass
@@ -345,6 +347,10 @@ def run_extract_genotypes(args: Any) -> int:
         for r in chrom_results
         if r.status == "ok" and r.row_count == 0
     ]
+
+    layout_errors = validate_genotypes_layout(out_dir, chromosomes)
+    errors.extend(issue("GENOTYPE_LAYOUT_INVALID", msg, "error") for msg in layout_errors)
+
     status = "ok" if not errors else "failed"
 
     result = GenotypeExtractResult(

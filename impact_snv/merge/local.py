@@ -17,11 +17,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
+from impact_snv import __version__ as VERSION
 from impact_snv.merge.core import MergeConfig, MergeResult, VCFMergeError, merge_result_manifest, merge_vcf_samples
 
 QC_MODES = {"warn", "strict", "off"}
 NORMALIZATION_MODES = {"auto", "always", "never"}
-VERSION = "1.0.0a0"
 
 
 @dataclass(frozen=True)

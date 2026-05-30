@@ -15,10 +15,10 @@ All documentation in this directory is designed to support developers, contribut
 #### [pipeline_contract.md](pipeline_contract.md)
 **Current state specification of the IMPACT-SNV pipeline**
 
-Describes the existing four-step workflow before refactoring:
+Describes the existing four-step workflow and refactor-era compatibility behavior:
 - Step 1: VCF merge, normalization, and chromosome split
 - Step 2: VCF-to-GDS conversion
-- Step 3: Legacy FAVORannotator annotation
+- Step 3: Backend-based annotation abstraction (legacy FAVORannotator compatibility + FAVOR-CLI path)
 - Step 4: IMPACT variant prioritization
 
 Specifies inputs, outputs, file naming conventions, and known behavior for each step. This is the authoritative reference for current pipeline behavior.
@@ -65,8 +65,8 @@ Ensures downstream tools (IMPACT-VIS, etc.) receive compatible outputs during re
 **Current chromosome handling behavior and refactor targets**
 
 Documents chromosome support across the pipeline:
-- Current limitation: autosome-only (chr1-chr22)
-- Target support: chr1-chr22, chrX, chrY
+- Current supported set: chr1-chr22, chrX, chrY
+- Normalization and filename expectations for `1-22`, `X`, `Y`
 - Chromosome naming conventions
 - Validation expectations for X/Y expansion
 
@@ -84,6 +84,15 @@ Guidelines for schema discovery before implementing the FAVOR-CLI adapter:
 - Documentation requirements for discovered mappings
 
 Prevents guessing about FAVOR-CLI field mappings and ensures adapter decisions are evidence-based.
+
+#### [release_readiness_2026-05-30.md](release_readiness_2026-05-30.md)
+**Current release-readiness validation summary**
+
+Records the latest focused validation matrix for the current refactor state:
+- Python regression suite status
+- packaging and install smoke results
+- representative finalize plus strict `validate-gds` checks
+- GeneBreaker QC recheck status
 
 ## Getting Started
 
@@ -121,6 +130,19 @@ annotation/info/FunctionalAnnotation/apc_protein_function_v3
 ```
 
 Any new annotation source (including FAVOR-CLI) must provide these fields or validated equivalents.
+
+### Explicit Compatibility Fallback Reporting
+Current flat-to-GDS flow records fallback behavior explicitly using:
+```
+impact_fallback_flags
+impact_fallback_count
+```
+and persists this metadata under:
+```
+annotation/info/IMPACT_AnnotationCompatibility/
+annotation/info/IMPACT_AnnotationProvenance/
+```
+This enables auditing of default/backfilled values during adapter transitions.
 
 ### Prioritization Formulas
 Step 4 assigns pathogenicity scores using tier-based formulas:

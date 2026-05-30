@@ -17,14 +17,18 @@ required by the current R GDS writer.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import math
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import pandas as pd
 import pyarrow.parquet as pq
+
+from impact_snv.gds import contract
 
 
 def normalize_chrom(value: Any) -> str:
@@ -131,6 +135,62 @@ def collapse_list(value: Any, sep: str = ";") -> str:
     return sep.join(vals)
 
 
+def normalize_exonic_category_chunks(value: Any) -> List[str]:
+    text = collapse_list(value, sep=";").lower()
+    if not text:
+        return []
+    chunks: List[str] = []
+    for chunk in re.split(r"[|,;/]+", text):
+        normalized = re.sub(r"[_\-]+", " ", chunk)
+        normalized = re.sub(r"\s+", " ", normalized).strip()
+        if normalized:
+            chunks.append(normalized)
+    return chunks
+
+
+def infer_indel_direction(ref: Any, alt: Any, text: str = "") -> str:
+    if re.search(r"\binsertion\b", text):
+        return "insertion"
+    if re.search(r"\bdeletion\b", text):
+        return "deletion"
+    ref_text = clean_str(ref).strip()
+    alt_text = clean_str(alt).strip()
+    if not ref_text or not alt_text or "," in alt_text:
+        return ""
+    if len(alt_text) > len(ref_text):
+        return "insertion"
+    if len(alt_text) < len(ref_text):
+        return "deletion"
+    return ""
+
+
+def classify_exonic_category_labels(consequence: Any, ref: Any = None, alt: Any = None) -> List[str]:
+    labels: List[str] = []
+    for chunk in normalize_exonic_category_chunks(consequence):
+        direction = infer_indel_direction(ref, alt, chunk)
+        if re.search(r"\bstop\s*gain(?:ed)?\b|\bnonsense\b", chunk):
+            labels.append("stopgain")
+        if re.search(r"\bstop\s*loss\b|\bstop\s*lost\b", chunk):
+            labels.append("stoploss")
+        if re.search(r"\bframeshift\b", chunk):
+            labels.append(f"frameshift {direction}".strip())
+        if re.search(r"\bnonframeshift\b|\binframe\b", chunk):
+            labels.append(f"nonframeshift {direction}".strip())
+        if re.search(r"\bnonsynonymous\b|\bmissense\b", chunk):
+            labels.append("nonsynonymous SNV")
+        if re.search(r"\bsynonymous\b", chunk):
+            labels.append("synonymous SNV")
+        if re.search(r"\bsplic", chunk):
+            labels.append("splicing")
+    seen = set()
+    ordered: List[str] = []
+    for label in labels:
+        if label and label not in seen:
+            seen.add(label)
+            ordered.append(label)
+    return ordered
+
+
 def load_gene_list(path: Path) -> Dict[str, float]:
     if not path.exists():
         raise FileNotFoundError(f"Gene list not found: {path}")
@@ -165,7 +225,7 @@ def best_gene(matched: Sequence[str], scores: Sequence[float]) -> Tuple[str, flo
     return matched[idx], float(scores[idx])
 
 
-def extract_maf_from_annotation_row(row: pd.Series) -> float:
+def extract_maf_from_annotation_row(row: pd.Series) -> Tuple[float, bool]:
     candidates = [
         row.get("bravo_af"),
         row.get("gnomad_genome_af"),
@@ -177,8 +237,8 @@ def extract_maf_from_annotation_row(row: pd.Series) -> float:
     for value in candidates:
         maf = allele_frequency_to_maf(value)
         if maf is not None:
-            return maf
-    return 0.0
+            return maf, False
+    return 0.0, True
 
 
 def extract_af(row: pd.Series, top_level: str, nested_col: str, nested_key: str) -> float:
@@ -200,18 +260,22 @@ def map_legacy_exonic_category(consequence: Any, ref: Any = None, alt: Any = Non
     text = collapse_list(consequence, sep=";").lower()
     if not text:
         return "unknown"
-    if "stop_gained" in text or "nonsense" in text:
-        return "stopgain"
-    if "frameshift" in text:
-        return "frameshift"
-    if "missense" in text or "nonsynonymous" in text:
-        return "nonsynonymous SNV"
-    if "synonymous" in text:
-        return "synonymous SNV"
-    if "splice" in text:
-        return "splicing"
-    if "inframe" in text:
-        return "nonframeshift"
+    labels = classify_exonic_category_labels(consequence, ref, alt)
+    for label in (
+        "stopgain",
+        "frameshift deletion",
+        "frameshift insertion",
+        "frameshift",
+        "stoploss",
+        "nonsynonymous SNV",
+        "synonymous SNV",
+        "splicing",
+        "nonframeshift deletion",
+        "nonframeshift insertion",
+        "nonframeshift",
+    ):
+        if label in labels:
+            return label
     return text[:200]
 
 
@@ -236,7 +300,7 @@ def extract_clnsig(row: pd.Series) -> str:
     )
 
 
-def extract_apc_protein_function(row: pd.Series) -> float:
+def extract_apc_protein_function(row: pd.Series) -> Tuple[float, bool]:
     apc = row.get("apc")
     candidates = [
         row.get("apc_protein_function_v3"),
@@ -249,8 +313,8 @@ def extract_apc_protein_function(row: pd.Series) -> float:
     for value in candidates:
         out = numeric_or_none(value)
         if out is not None:
-            return float(out)
-    return 0.0
+            return float(out), False
+    return 0.0, True
 
 
 def flatten_annotation_row(row: pd.Series, gene_scores: Dict[str, float]) -> Optional[Dict[str, Any]]:
@@ -277,7 +341,18 @@ def flatten_annotation_row(row: pd.Series, gene_scores: Dict[str, float]) -> Opt
     variant_vcf = first_nonempty(row.get("variant_vcf"), default=f"{chrom}:{pos}:{ref}:{alt}")
     transcript_info = collapse_list(struct_get(gencode, "transcripts"), sep=";")
     clnsig = extract_clnsig(row)
-    apc_pf = extract_apc_protein_function(row)
+    apc_pf, apc_fallback = extract_apc_protein_function(row)
+    maf, maf_fallback = extract_maf_from_annotation_row(row)
+
+    fallback_flags: List[str] = []
+    if not transcript_info:
+        fallback_flags.append("GENECODE_INFO_FALLBACK_TO_MATCHED_GENES")
+    if not clnsig:
+        fallback_flags.append("CLNSIG_MISSING_DEFAULT_EMPTY")
+    if apc_fallback:
+        fallback_flags.append("APC_PROTEIN_FUNCTION_DEFAULT_0")
+    if maf_fallback:
+        fallback_flags.append("MAF_DEFAULT_0")
 
     return {
         "chromosome": chrom,
@@ -288,7 +363,7 @@ def flatten_annotation_row(row: pd.Series, gene_scores: Dict[str, float]) -> Opt
         # variant_id is filled with a sequential integer after sample/chrom filtering.
         "vid": vid,
         "variant_vcf": variant_vcf,
-        "maf": extract_maf_from_annotation_row(row),
+        "maf": maf,
         "bravo_af": bravo_af,
         "gnomad_genome_af": gnomad_genome_af,
         "gnomad_exome_af": gnomad_exome_af,
@@ -319,6 +394,8 @@ def flatten_annotation_row(row: pd.Series, gene_scores: Dict[str, float]) -> Opt
         "apc_protein_function": apc_pf,
         "apc_protein_function_v3": apc_pf,
         "cadd_phred": numeric_or_nan(nested_get(row.get("main"), ["cadd", "phred"])),
+        "impact_fallback_flags": ";".join(fallback_flags),
+        "impact_fallback_count": len(fallback_flags),
     }
 
 
@@ -435,6 +512,14 @@ def flatten_one(
     matched_genes = sorted(set(g for value in ann.get("matched_genes", []) for g in clean_str(value).split(";") if g)) if not ann.empty else []
     rows_with_clnsig = int((merged.get("clnsig", pd.Series(dtype=str)).fillna("").astype(str) != "").sum()) if len(merged) else 0
     rows_with_apc = int((merged.get("apc_protein_function_v3", pd.Series(dtype=float)).fillna(0).astype(float) != 0).sum()) if len(merged) else 0
+    fallback_series = merged.get("impact_fallback_flags", pd.Series(dtype=str)).fillna("").astype(str) if len(merged) else pd.Series(dtype=str)
+    rows_with_fallbacks = int((fallback_series != "").sum()) if len(merged) else 0
+    fallback_counts = Counter(
+        flag
+        for value in fallback_series
+        for flag in value.split(";")
+        if flag
+    )
     summary = {
         "sample_id": sample_id,
         "chromosome": chrom,
@@ -446,52 +531,73 @@ def flatten_one(
         "final_carried_gene_matched_rows": int(len(merged)),
         "rows_with_clnsig": rows_with_clnsig,
         "rows_with_apc_protein_function": rows_with_apc,
+        "rows_with_compatibility_fallbacks": rows_with_fallbacks,
+        "compatibility_fallback_counts": dict(sorted(fallback_counts.items())),
         "matched_genes_observed": matched_genes[:200],
     }
     return merged, summary
 
 
 def required_output_columns() -> List[str]:
-    return [
-        "sample_id", "variant_id", "chromosome", "position", "ref", "alt", "allele",
-        "dosage", "maf", "vid", "variant_vcf", "matched_gene", "matched_gene_score",
-        "genecode_comprehensive_info", "genecode_comprehensive_exonic_category",
-        "refseq_exonic_category", "ucsc_exonic_category", "clnsig", "apc_protein_function_v3",
-    ]
+    """Return the canonical required flat columns from the package contract."""
+    return contract.required_output_columns()
 
 
 def finalize_flat_schema(df: pd.DataFrame, sample_id: str) -> pd.DataFrame:
     out = df.copy()
     n = len(out)
+
+    if "impact_fallback_flags" not in out.columns:
+        out["impact_fallback_flags"] = ""
+
+    def append_fallback_flag(flag: str) -> None:
+        if len(out) == 0:
+            return
+        values = out["impact_fallback_flags"].fillna("").astype(str)
+        out["impact_fallback_flags"] = values.map(lambda x: flag if not x else f"{x};{flag}")
+
     if "sample_id" not in out.columns:
         out["sample_id"] = sample_id
     if "allele" not in out.columns:
         out["allele"] = out["alt"] if "alt" in out.columns else ""
+        append_fallback_flag("BACKFILL_ALLELE")
     if "maf" not in out.columns:
         out["maf"] = 0.0
+        append_fallback_flag("BACKFILL_MAF_DEFAULT_0")
     if "vid" not in out.columns:
         out["vid"] = ""
+        append_fallback_flag("BACKFILL_VID_EMPTY")
     if "variant_vcf" not in out.columns:
         if all(c in out.columns for c in ["chromosome", "position", "ref", "alt"]):
             out["variant_vcf"] = out["chromosome"].astype(str) + ":" + out["position"].astype(str) + ":" + out["ref"].astype(str) + ":" + out["alt"].astype(str)
+            append_fallback_flag("BACKFILL_VARIANT_VCF_FROM_KEYS")
         else:
             out["variant_vcf"] = ""
+            append_fallback_flag("BACKFILL_VARIANT_VCF_EMPTY")
     if "matched_gene" not in out.columns:
         out["matched_gene"] = out["gene"] if "gene" in out.columns else ""
+        append_fallback_flag("BACKFILL_MATCHED_GENE")
     if "matched_gene_score" not in out.columns:
         out["matched_gene_score"] = out["globalScore"] if "globalScore" in out.columns else float("nan")
+        append_fallback_flag("BACKFILL_MATCHED_GENE_SCORE")
     if "genecode_comprehensive_info" not in out.columns:
         out["genecode_comprehensive_info"] = out["GeneDetail_refGene"] if "GeneDetail_refGene" in out.columns else ""
+        append_fallback_flag("BACKFILL_GENECODE_INFO")
     if "genecode_comprehensive_exonic_category" not in out.columns:
         out["genecode_comprehensive_exonic_category"] = out["ExonicFunc_refGene"] if "ExonicFunc_refGene" in out.columns else "unknown"
+        append_fallback_flag("BACKFILL_GENECODE_EXONIC_CATEGORY")
     if "refseq_exonic_category" not in out.columns:
         out["refseq_exonic_category"] = out["genecode_comprehensive_exonic_category"]
+        append_fallback_flag("BACKFILL_REFSEQ_EXONIC_CATEGORY")
     if "ucsc_exonic_category" not in out.columns:
         out["ucsc_exonic_category"] = out["genecode_comprehensive_exonic_category"]
+        append_fallback_flag("BACKFILL_UCSC_EXONIC_CATEGORY")
     if "clnsig" not in out.columns:
         out["clnsig"] = ""
+        append_fallback_flag("BACKFILL_CLNSIG_EMPTY")
     if "apc_protein_function_v3" not in out.columns:
         out["apc_protein_function_v3"] = 0.0
+        append_fallback_flag("BACKFILL_APC_DEFAULT_0")
 
     # variant_id must be integer-like for the current R writer. Assign sequential
     # IDs per flat file; the R writer may reassign global IDs after read.
@@ -504,6 +610,11 @@ def finalize_flat_schema(df: pd.DataFrame, sample_id: str) -> pd.DataFrame:
     for col in str_cols:
         if col in out.columns:
             out[col] = out[col].fillna("").astype(str)
+    out["impact_fallback_flags"] = out["impact_fallback_flags"].fillna("").astype(str)
+    out["impact_fallback_flags"] = out["impact_fallback_flags"].map(
+        lambda x: ";".join(dict.fromkeys([flag for flag in x.split(";") if flag]))
+    )
+    out["impact_fallback_count"] = out["impact_fallback_flags"].map(lambda x: 0 if not x else len(x.split(";"))).astype("int64")
     for col in ["position", "variant_id"]:
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce").fillna(0).astype("int64")
@@ -515,6 +626,7 @@ def finalize_flat_schema(df: pd.DataFrame, sample_id: str) -> pd.DataFrame:
 
     first = required_output_columns()
     optional_first = [
+        "impact_fallback_flags", "impact_fallback_count",
         "matched_gene_all", "matched_gene_score_all", "matched_gene_source", "gene", "genes", "matched_genes",
         "globalScore", "global_score", "Func_refGene", "Gene_refGene", "GeneDetail_refGene", "ExonicFunc_refGene",
         "AAChange_refGene", "clinvar_clnsig", "apc_protein_function", "bravo_af", "gnomad_genome_af",
@@ -526,6 +638,8 @@ def finalize_flat_schema(df: pd.DataFrame, sample_id: str) -> pd.DataFrame:
 
 def write_outputs(df: pd.DataFrame, summary: Dict[str, Any], out: Path, preview_csv: Optional[Path], preview_rows: int, summary_json: Optional[Path]) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
+    # Validate schema against the package contract before writing.
+    contract.validate_flat_df(df)
     df.to_parquet(out, index=False, engine="pyarrow")
     if preview_csv:
         preview_csv.parent.mkdir(parents=True, exist_ok=True)

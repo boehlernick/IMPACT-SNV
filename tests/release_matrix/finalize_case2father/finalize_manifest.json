@@ -1,0 +1,91 @@
+{
+  "command": "impact-snv finalize-gds",
+  "compat_script": "/home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/lib/python3.12/site-packages/impact_snv/resources/add_impact_vis_compat_nodes.R",
+  "created_utc": "2026-05-30T11:11:41.783491+00:00",
+  "failed_count": 0,
+  "gene_list": "step4_impact_prioritization/GeneList.txt",
+  "input_dir": "tests/genebreaker_vcfs/merged_vcf_test/gds_build/gds_merged",
+  "ok_count": 1,
+  "out_dir": "tests/release_matrix/finalize_case2father",
+  "prioritize_script": "/home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/lib/python3.12/site-packages/impact_snv/resources/impact_prioritize_gds.R",
+  "qc_mode": "warn",
+  "result_count": 1,
+  "results": [
+    {
+      "commands": [
+        {
+          "command": [
+            "Rscript",
+            "/home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/lib/python3.12/site-packages/impact_snv/resources/impact_prioritize_gds.R",
+            "--input-gds",
+            "tests/genebreaker_vcfs/merged_vcf_test/gds_build/gds_merged/Case2_father_SNV_IMPACT.preprioritization.gds",
+            "--gene-list",
+            "step4_impact_prioritization/GeneList.txt",
+            "--output-gds",
+            "tests/release_matrix/finalize_case2father/.tmp/Case2_father_SNV_IMPACT.scored.tmp.gds",
+            "--force"
+          ],
+          "returncode": 0,
+          "stderr_log": "tests/release_matrix/finalize_case2father/logs/Case2_father.prioritize.stderr.log",
+          "stdout_log": "tests/release_matrix/finalize_case2father/logs/Case2_father.prioritize.stdout.log"
+        },
+        {
+          "command": [
+            "Rscript",
+            "/home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/lib/python3.12/site-packages/impact_snv/resources/add_impact_vis_compat_nodes.R",
+            "--input-gds",
+            "tests/release_matrix/finalize_case2father/.tmp/Case2_father_SNV_IMPACT.scored.tmp.gds",
+            "--output-gds",
+            "tests/release_matrix/finalize_case2father/Case2_father_SNV_IMPACT.gds",
+            "--force",
+            "--no-optimize"
+          ],
+          "returncode": 0,
+          "stderr_log": "tests/release_matrix/finalize_case2father/logs/Case2_father.viscompat.stderr.log",
+          "stdout_log": "tests/release_matrix/finalize_case2father/logs/Case2_father.viscompat.stdout.log"
+        }
+      ],
+      "errors": [],
+      "input_gds": "tests/genebreaker_vcfs/merged_vcf_test/gds_build/gds_merged/Case2_father_SNV_IMPACT.preprioritization.gds",
+      "message": "",
+      "output_gds": "tests/release_matrix/finalize_case2father/Case2_father_SNV_IMPACT.gds",
+      "sample_id": "Case2_father",
+      "scored_intermediate_gds": "tests/release_matrix/finalize_case2father/.tmp/Case2_father_SNV_IMPACT.scored.tmp.gds",
+      "status": "ok",
+      "validation": {
+        "deprecated_nodes_present": [],
+        "errors": [],
+        "gds_path": "tests/release_matrix/finalize_case2father/Case2_father_SNV_IMPACT.gds",
+        "is_valid": true,
+        "length_mismatches": {},
+        "missing_nodes": [],
+        "nonzero_impact_score_variants": 210906,
+        "sample_count": 1,
+        "sample_id": "Case2_father",
+        "tier_counts": {
+          "0": 61579,
+          "1": 1,
+          "2": 61,
+          "3": 79,
+          "4": 210765
+        },
+        "variant_count": 272485,
+        "varinfo_preview": [
+          "1-1208038-T-C",
+          "1-1208071-A-G",
+          "1-1208784-G-T",
+          "1-1208816-T-C",
+          "1-1209452-A-G",
+          "1-1212042-C-T",
+          "1-1212898-C-T",
+          "1-1212978-G-A",
+          "1-1213345-G-A",
+          "1-1213936-C-G"
+        ],
+        "warnings": []
+      },
+      "warnings": []
+    }
+  ],
+  "version": "1.0.0a0"
+}

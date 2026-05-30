@@ -38,8 +38,40 @@ required_columns <- c(
   "apc_protein_function_v3"
 )
 
+# Attempt to load the canonical flat contract from the Python package `impact_snv`
+# to keep a single source-of-truth. This requires `python` and the package to be
+# importable in the current environment. If unavailable, fall back to the
+# hard-coded `required_columns` above.
+load_required_columns_from_python <- function() {
+  if (!requireNamespace("jsonlite", quietly = TRUE)) return(NULL)
+  py_cmd <- paste(
+    "import json, importlib;",
+    "m=importlib.import_module('impact_snv.gds.contract');",
+    "print(json.dumps(getattr(m, 'REQUIRED_FLAT_COLUMNS', [])))",
+    sep = " "
+  )
+  out <- tryCatch(
+    system2("python", c("-c", py_cmd), stdout = TRUE, stderr = TRUE),
+    error = function(e) NULL
+  )
+  if (is.null(out) || length(out) == 0) return(NULL)
+  # Join multi-line output then parse JSON
+  json_text <- paste(out, collapse = "\n")
+  parsed <- tryCatch(jsonlite::fromJSON(json_text), error = function(e) NULL)
+  if (is.null(parsed) || !is.character(parsed)) return(NULL)
+  parsed
+}
+
 fail <- function(...) stop(paste0(...), call. = FALSE)
 log_msg <- function(...) cat(paste0(..., "\n"))
+
+py_cols <- load_required_columns_from_python()
+if (!is.null(py_cols) && length(py_cols) > 0) {
+  required_columns <- py_cols
+  log_msg("Using required_columns from Python impact_snv.gds.contract")
+} else {
+  log_msg("Using embedded required_columns; Python contract not available")
+}
 as_chr <- function(x, default = "") { y <- as.character(x); y[is.na(y)] <- default; y }
 as_num <- function(x) suppressWarnings(as.numeric(x))
 as_int <- function(x) suppressWarnings(as.integer(x))
@@ -91,6 +123,14 @@ add_func <- function(gds, name, value, replace = TRUE) {
   SeqArray::seqAddValue(gds, paste0("annotation/info/FunctionalAnnotation/", name), value, replace = replace, verbose = FALSE)
 }
 
+add_compat <- function(gds, name, value, replace = TRUE) {
+  SeqArray::seqAddValue(gds, paste0("annotation/info/IMPACT_AnnotationCompatibility/", name), value, replace = replace, verbose = FALSE)
+}
+
+add_provenance <- function(gds, name, value, replace = TRUE) {
+  SeqArray::seqAddValue(gds, paste0("annotation/info/IMPACT_AnnotationProvenance/", name), value, replace = replace, verbose = FALSE)
+}
+
 ensure_functional_annotation_folder <- function(gds) {
   info_node <- gdsfmt::index.gdsn(gds, "annotation/info", silent = TRUE)
   if (is.null(info_node)) {
@@ -100,6 +140,20 @@ ensure_functional_annotation_folder <- function(gds) {
   }
   func_node <- gdsfmt::index.gdsn(info_node, "FunctionalAnnotation", silent = TRUE)
   if (is.null(func_node)) gdsfmt::addfolder.gdsn(info_node, "FunctionalAnnotation")
+  invisible(TRUE)
+}
+
+ensure_impact_metadata_folders <- function(gds) {
+  info_node <- gdsfmt::index.gdsn(gds, "annotation/info", silent = TRUE)
+  if (is.null(info_node)) {
+    ann_node <- gdsfmt::index.gdsn(gds, "annotation", silent = TRUE)
+    if (is.null(ann_node)) ann_node <- gdsfmt::addfolder.gdsn(gds, "annotation")
+    info_node <- gdsfmt::addfolder.gdsn(ann_node, "info")
+  }
+  compat_node <- gdsfmt::index.gdsn(info_node, "IMPACT_AnnotationCompatibility", silent = TRUE)
+  if (is.null(compat_node)) gdsfmt::addfolder.gdsn(info_node, "IMPACT_AnnotationCompatibility")
+  provenance_node <- gdsfmt::index.gdsn(info_node, "IMPACT_AnnotationProvenance", silent = TRUE)
+  if (is.null(provenance_node)) gdsfmt::addfolder.gdsn(info_node, "IMPACT_AnnotationProvenance")
   invisible(TRUE)
 }
 
@@ -132,6 +186,7 @@ append_annotations <- function(gds_path, df, input_path) {
   gds <- SeqArray::seqOpen(gds_path, readonly = FALSE)
   on.exit(try(SeqArray::seqClose(gds), silent = TRUE), add = TRUE)
   ensure_functional_annotation_folder(gds)
+  ensure_impact_metadata_folders(gds)
   nvar <- nrow(df)
 
   # Use sequential integer variant IDs. This is safer than trusting legacy/string IDs.
@@ -184,6 +239,15 @@ append_annotations <- function(gds_path, df, input_path) {
   }
   add_info(gds, "source_flat_file", rep(normalizePath(input_path, mustWork = FALSE), nvar))
   add_info(gds, "gds_contract_version", rep("impact_snv_v1_flat_contract", nvar))
+
+  if ("impact_fallback_flags" %in% names(df)) {
+    add_compat(gds, "fallback_flags", as_chr(df$impact_fallback_flags))
+  }
+  if ("impact_fallback_count" %in% names(df)) {
+    add_compat(gds, "fallback_count", as_int(df$impact_fallback_count))
+  }
+  add_provenance(gds, "adapter_version", rep("impact_snv_flatten_v1", nvar))
+  add_provenance(gds, "compatibility_contract_version", rep("impact_snv_v1_flat_contract", nvar))
   invisible(TRUE)
 }
 

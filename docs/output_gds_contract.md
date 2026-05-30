@@ -168,10 +168,18 @@ Each final GDS file should contain the following final IMPACT annotation nodes:
 annotation/info/impact_score
 annotation/info/impact_score_calc
 annotation/info/tier
+annotation/info/scoring_gene
+annotation/info/scoring_gene_score
 annotation/info/clnsig_flags/*
+annotation/info/FunctionalAnnotation/VarInfo
+annotation/info/FunctionalAnnotation/clnsig
+annotation/info/FunctionalAnnotation/bravo_af
+annotation/info/FunctionalAnnotation/aloft_prediction
 ```
 
 These nodes are part of the downstream output contract and should not be renamed or relocated during the FAVOR-CLI adapter refactor.
+
+`scoring_gene` and `scoring_gene_score` capture the gene chosen for the final IMPACT score and the gene-level score used in the corresponding tier formula. The `VarInfo`, `clnsig`, `bravo_af`, and `aloft_prediction` nodes remain part of the required final compatibility surface because current `validate-gds` checks and downstream IMPACT-VIS readers expect them to exist for every retained variant. When `bravo_af` or `aloft_prediction` are absent upstream, the finalize compatibility step may materialize structurally safe placeholder vectors so node presence and vector length remain stable.
 
 ## `impact_score`
 
@@ -465,6 +473,17 @@ annotation/info/IMPACT_AnnotationProvenance/
 annotation/info/IMPACT_AnnotationCompatibility/
 ```
 
+Current implementation note:
+
+The flat-to-GDS writer currently records explicit compatibility fallback metadata in:
+
+```text
+annotation/info/IMPACT_AnnotationCompatibility/fallback_flags
+annotation/info/IMPACT_AnnotationCompatibility/fallback_count
+annotation/info/IMPACT_AnnotationProvenance/adapter_version
+annotation/info/IMPACT_AnnotationProvenance/compatibility_contract_version
+```
+
 Recommended provenance fields include:
 
 ```text
@@ -479,6 +498,8 @@ variant_key_policy
 field_mapping_policy
 fallback_policy
 ```
+
+Additional implementation-specific fields may be present while the FAVOR-CLI adapter is under active refactor, provided final IMPACT output contracts remain stable.
 
 Provenance metadata is strongly recommended for adapter-injected GDS files, especially because updated FAVOR databases may legitimately change annotations and scores.
 
