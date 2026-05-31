@@ -230,7 +230,8 @@ def assert_unique_sample_ids(sample_ids_by_file: Mapping[Path, Sequence[str]]) -
         msg = "\n".join(f" sample {s!r}: {a} and {b}" for s, a, b in dup)
         raise VCFMergeError(
             "Duplicate sample IDs were detected across input VCFs. Reheader samples before merging.\n"
-            "Duplicates:\n" + msg + "\nIf intentional, set --force-samples, but this is not recommended for IMPACT-SNV production because downstream GDS and IMPACT-VIS outputs require stable unique sample IDs. Prefer reheadering inputs before merge."
+            "Duplicates:\n" + msg + "\nRun impact-snv sanitize-vcfs on the inputs before merge, or reheader manually. "
+            "If intentional, set --force-samples, but this is not recommended for IMPACT-SNV production because downstream GDS and IMPACT-VIS outputs require stable unique sample IDs. Prefer reheadering inputs before merge."
         )
     return tuple(ordered)
 

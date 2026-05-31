@@ -15,6 +15,7 @@ This repository currently contains both:
 - the original DNAnexus step directories retained for backward compatibility and platform packaging
 
 Implemented package CLI commands are:
+- `sanitize-vcfs`
 - `merge`
 - `favor-ingest`
 - `favor-annotate`
@@ -52,7 +53,7 @@ VCF Files → [Step 1: Merge] → [Step 2: VCF2GDS] → [Step 3: FAVOR Annotate]
 The maintained package CLI exposes the same workflow through more granular local commands:
 
 ```
-VCF Files → impact-snv merge → impact-snv favor-ingest / favor-annotate + impact-snv extract-genotypes → impact-snv build-gds → impact-snv finalize-gds → impact-snv validate-gds / qc-build
+VCF Files → impact-snv sanitize-vcfs (when sample IDs collide) → impact-snv merge → impact-snv favor-ingest / favor-annotate + impact-snv extract-genotypes → impact-snv build-gds → impact-snv finalize-gds → impact-snv validate-gds / qc-build
 ```
 
 | Step | Folder | Description | Input | Output |
@@ -178,6 +179,20 @@ Install the package in your environment and inspect the available commands:
 python -m pip install -e .
 impact-snv --help
 ```
+
+When input VCFs come from repeated trio-style fixtures with sample IDs like `proband`, `mother`, and `father`, sanitize them before merge so downstream GDS and IMPACT-VIS sample IDs stay unique and stable:
+
+```bash
+impact-snv sanitize-vcfs \
+  --vcfs tests/production_test/*.vcf.gz \
+  --out-dir out/sanitized_inputs
+
+impact-snv merge \
+  --vcf-manifest out/sanitized_inputs/sanitized_vcfs.tsv \
+  --out-vcf out/merged.vcf.gz
+```
+
+By default the sanitizer derives a case prefix from the filename, so trio sample IDs like `proband`, `mother`, and `father` become names such as `Case1_proband`, `Case1_mother`, and `Case1_father`.
 
 Backend-aware Step 3 annotation examples:
 

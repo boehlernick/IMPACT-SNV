@@ -65,6 +65,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=f"impact-snv {__version__}")
     subparsers = parser.add_subparsers(dest="command", metavar="COMMAND", required=True)
+    add_sanitize_vcfs_parser(subparsers)
     add_merge_parser(subparsers)
     add_favor_ingest_parser(subparsers)
     add_favor_annotate_parser(subparsers)
@@ -75,6 +76,28 @@ def build_parser() -> argparse.ArgumentParser:
     add_qc_build_parser(subparsers)
     add_placeholder_parsers(subparsers)
     return parser
+
+
+def add_sanitize_vcfs_parser(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser(
+        "sanitize-vcfs",
+        help="Reheader input VCF sample IDs to stable unique names before merge.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    src = p.add_mutually_exclusive_group(required=True)
+    src.add_argument("--vcfs", nargs="+", type=_existing_file)
+    src.add_argument("--vcf-manifest", type=_existing_file)
+    p.add_argument("--out-dir", required=True, type=_path)
+    p.add_argument("--prefix-regex", default=r"(?i)(case\d+)")
+    p.add_argument("--threads", type=positive_int, default=1)
+    p.add_argument("--force", action="store_true")
+    p.add_argument("--bcftools", type=_path)
+    p.add_argument("--bgzip", type=_path)
+    p.add_argument("--manifest-tsv", type=_path)
+    p.add_argument("--manifest-json", type=_path)
+    p.add_argument("--command-log", type=_path)
+    p.add_argument("--quiet", action="store_true")
+    p.set_defaults(func=cmd_sanitize_vcfs)
 
 
 def add_merge_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -234,6 +257,15 @@ def cmd_merge(args: argparse.Namespace) -> int:
     from impact_snv.merge.local import MergeCliArgs, load_vcfs_from_manifest, run_merge
     vcfs = [Path(x) for x in args.vcfs] if args.vcfs else load_vcfs_from_manifest(Path(args.vcf_manifest))
     return run_merge(MergeCliArgs(vcfs, args.out_vcf, args.reference_fasta, args.reference_build, args.normalization_mode, args.preflight_records, args.threads, args.work_dir, args.keep_intermediates, args.force, args.force_samples, args.bcftools, args.bgzip, list(args.extra_merge_arg or []), args.command_log, args.manifest_json, args.qc_mode, args.quiet))
+
+
+def cmd_sanitize_vcfs(args: argparse.Namespace) -> int:
+    from impact_snv.merge.local import load_vcfs_from_manifest
+    from impact_snv.merge.sanitize import run_sanitize_vcfs
+
+    if not getattr(args, "vcfs", None):
+        args.vcfs = load_vcfs_from_manifest(Path(args.vcf_manifest))
+    return int(run_sanitize_vcfs(args) or 0)
 
 
 def cmd_favor_ingest(args: argparse.Namespace) -> int:
