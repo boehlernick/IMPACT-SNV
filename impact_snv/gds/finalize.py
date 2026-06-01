@@ -33,6 +33,7 @@ from pathlib import Path
 from typing import Any, Optional, Sequence
 
 from impact_snv import __version__ as VERSION
+from impact_snv.gene_lists import resolve_sample_gene_list
 from impact_snv.gds.validate import GdsValidationResult, validate_gds_file
 
 
@@ -55,6 +56,7 @@ class FinalizeSampleResult:
     """Structured result for one sample finalization."""
 
     sample_id: str
+    gene_list: str
     input_gds: str
     scored_intermediate_gds: str
     output_gds: str
@@ -210,6 +212,7 @@ def finalize_one_sample(
 
     result = FinalizeSampleResult(
         sample_id=sample_id,
+        gene_list=str(gene_list),
         input_gds=str(input_gds),
         scored_intermediate_gds=str(scored_gds),
         output_gds=str(final_gds),
@@ -292,7 +295,9 @@ def write_manifest(
     manifest_path: Path,
     input_dir: Path,
     out_dir: Path,
-    gene_list: Path,
+    gene_list: Optional[Path],
+    gene_list_manifest: Optional[Path],
+    resolved_gene_lists: dict[str, str],
     qc_mode: str,
     prioritize_script: Path,
     compat_script: Path,
@@ -305,7 +310,9 @@ def write_manifest(
         "created_utc": utc_now_iso(),
         "input_dir": str(input_dir),
         "out_dir": str(out_dir),
-        "gene_list": str(gene_list),
+        "gene_list": str(gene_list) if gene_list else None,
+        "gene_list_manifest": str(gene_list_manifest) if gene_list_manifest else None,
+        "resolved_gene_lists": resolved_gene_lists,
         "qc_mode": qc_mode,
         "prioritize_script": str(prioritize_script),
         "compat_script": str(compat_script),
@@ -320,7 +327,12 @@ def write_manifest(
 def run_finalize_gds(args: Any) -> int:
     """CLI adapter used by impact_snv.cli for finalize-gds."""
     input_dir = Path(args.input_dir)
-    gene_list = Path(args.gene_list)
+    gene_list = Path(args.gene_list) if getattr(args, "gene_list", None) else None
+    gene_list_manifest = (
+        Path(args.gene_list_manifest)
+        if getattr(args, "gene_list_manifest", None)
+        else None
+    )
     out_dir = Path(args.out_dir)
     qc_mode = getattr(args, "qc_mode", "warn")
     samples_filter = set(getattr(args, "samples", None) or [])
@@ -354,14 +366,21 @@ def run_finalize_gds(args: Any) -> int:
         return 1
 
     results: list[FinalizeSampleResult] = []
+    resolved_gene_lists: dict[str, str] = {}
     for input_gds in preprior_files:
         sample_id = infer_sample_id_from_preprior_gds(input_gds)
+        sample_gene_list = resolve_sample_gene_list(
+            sample_id,
+            gene_list=gene_list,
+            gene_list_manifest=gene_list_manifest,
+        )
+        resolved_gene_lists[sample_id] = str(sample_gene_list)
         print(f"Finalizing {sample_id}: {input_gds}", flush=True)
         sample_result = finalize_one_sample(
             sample_id=sample_id,
             input_gds=input_gds,
             out_dir=out_dir,
-            gene_list=gene_list,
+            gene_list=sample_gene_list,
             rscript=rscript,
             prioritize_script=prioritize_script,
             compat_script=compat_script,
@@ -391,6 +410,8 @@ def run_finalize_gds(args: Any) -> int:
         input_dir=input_dir,
         out_dir=out_dir,
         gene_list=gene_list,
+        gene_list_manifest=gene_list_manifest,
+        resolved_gene_lists=resolved_gene_lists,
         qc_mode=qc_mode,
         prioritize_script=prioritize_script,
         compat_script=compat_script,

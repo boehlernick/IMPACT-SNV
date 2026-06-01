@@ -101,8 +101,11 @@ def test_favor_cli_backend_allows_annotation_only_success_and_records_warnings(t
     out_dir = tmp_path / "out"
     favor_bin = tmp_path / "favor"
     favor_bin.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    observed: dict[str, object] = {}
 
     def _fake_run_logged_command_with_progress(command, **kwargs):
+        observed["command"] = command
+        observed["watch_paths"] = kwargs["watch_paths"]
         annotated_dir = Path(kwargs["watch_paths"][0])
         _write_parquet(annotated_dir / "chromosome=1" / "data.parquet")
         return 0
@@ -144,6 +147,10 @@ def test_favor_cli_backend_allows_annotation_only_success_and_records_warnings(t
     assert payload["annotated_chromosome_partitions"]
     assert payload["genotype_chromosome_partitions"] == []
     assert payload["favor_command"][1] == "annotate"
+    assert payload["favor_command"][2] == "-o"
+    assert payload["favor_command"][3].endswith("caseC.annotated")
+    assert payload["favor_command"][4].endswith("caseC.ingested")
     assert payload["stdout_log"].endswith("caseC.favor_annotate.stdout.log")
     assert payload["stderr_log"].endswith("caseC.favor_annotate.stderr.log")
     assert warning_codes == {"GENOTYPES_OUTPUT_NOT_CREATED", "GENOTYPE_SAMPLES_FILE_NOT_CREATED"}
+    assert observed["watch_paths"] == [out_dir / "caseC.annotated"]

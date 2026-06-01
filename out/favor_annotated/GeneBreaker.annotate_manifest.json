@@ -1,0 +1,79 @@
+{
+  "annotated_chromosome_partitions": [
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=1",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=10",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=11",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=12",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=13",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=14",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=15",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=16",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=17",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=18",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=19",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=2",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=20",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=21",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=22",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=3",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=4",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=5",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=6",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=7",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=8",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=9",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=X",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated/chromosome=Y"
+  ],
+  "annotated_dir": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated",
+  "backend": "favor-cli",
+  "command": "favor-annotate",
+  "cwd": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated",
+  "end_time_utc": "2026-06-01T15:07:30.735623+00:00",
+  "favor_bin": "favor",
+  "favor_command": [
+    "favor",
+    "annotate",
+    "-o",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.annotated",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/merged.ingested"
+  ],
+  "force": true,
+  "genotype_chromosome_partitions": [],
+  "genotypes_dir": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.genotypes",
+  "ingested_dir": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/merged.ingested",
+  "max_progress_log_line_chars": 300,
+  "message": "",
+  "observed_output_latest_mtime_utc": {
+    "annotated_dir": "2026-06-01T15:07:27.710476+00:00"
+  },
+  "observed_output_sizes_bytes": {
+    "annotated_dir": 4186242055
+  },
+  "out_dir": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated",
+  "out_prefix": "GeneBreaker",
+  "progress_interval_seconds": 60,
+  "progress_mode": "normal",
+  "quiet": false,
+  "reference_build": "GRCh38",
+  "removed_paths": [],
+  "return_code": 0,
+  "samples_file": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.genotypes/samples.txt",
+  "start_time_utc": "2026-06-01T02:51:32.956945+00:00",
+  "status": "ok",
+  "stderr_log": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/logs/GeneBreaker.favor_annotate.stderr.log",
+  "stdout_log": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/logs/GeneBreaker.favor_annotate.stdout.log",
+  "tail_log_lines": 0,
+  "warnings": [
+    {
+      "code": "GENOTYPES_OUTPUT_NOT_CREATED",
+      "message": "favor annotate did not create /home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.genotypes; genotype extraction is handled by impact-snv extract-genotypes.",
+      "severity": "warning"
+    },
+    {
+      "code": "GENOTYPE_SAMPLES_FILE_NOT_CREATED",
+      "message": "favor annotate did not create /home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_annotated/GeneBreaker.genotypes/samples.txt; genotype extraction is handled by impact-snv extract-genotypes.",
+      "severity": "warning"
+    }
+  ]
+}

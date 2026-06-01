@@ -57,6 +57,12 @@ def test_release_cli_end_to_end_build_finalize_validate_and_qc(tmp_path: Path) -
     annotated_dir = _fixture_path("merged_case1_case2_output.annotated")
     genotypes_dir = _fixture_path("merged_case1_case2_output.genotypes")
     gene_list = _fixture_path("GeneList.txt")
+    gene_list_manifest = tmp_path / "sample_gene_lists.tsv"
+    gene_list_manifest.write_text(
+        "sample_id\tgene_list_path\n"
+        f"Case1\t{gene_list}\n",
+        encoding="utf-8",
+    )
 
     sample_id = "Case1_mother"
     build_out = tmp_path / "build"
@@ -70,8 +76,8 @@ def test_release_cli_end_to_end_build_finalize_validate_and_qc(tmp_path: Path) -
             str(annotated_dir),
             "--genotypes-dir",
             str(genotypes_dir),
-            "--gene-list",
-            str(gene_list),
+            "--gene-list-manifest",
+            str(gene_list_manifest),
             "--out-dir",
             str(build_out),
             "--samples",
@@ -96,6 +102,9 @@ def test_release_cli_end_to_end_build_finalize_validate_and_qc(tmp_path: Path) -
     assert build_manifest["command"] == "impact-snv build-gds"
     assert build_manifest["samples"] == [sample_id]
     assert build_manifest["chromosomes"] == ["1", "X"]
+    assert build_manifest["gene_list"] is None
+    assert build_manifest["gene_list_manifest"] == str(gene_list_manifest)
+    assert build_manifest["resolved_gene_lists"][sample_id] == str(gene_list)
     assert len(build_manifest["sample_merges"]) == 1
     assert build_manifest["sample_merges"][0]["status"] == "ok"
     assert build_manifest["sample_merges"][0]["variant_count"] > 0
@@ -117,8 +126,8 @@ def test_release_cli_end_to_end_build_finalize_validate_and_qc(tmp_path: Path) -
             "finalize-gds",
             "--input-dir",
             str(build_out / "gds_merged"),
-            "--gene-list",
-            str(gene_list),
+            "--gene-list-manifest",
+            str(gene_list_manifest),
             "--out-dir",
             str(finalize_out),
             "--samples",
@@ -138,9 +147,13 @@ def test_release_cli_end_to_end_build_finalize_validate_and_qc(tmp_path: Path) -
     finalize_manifest_path = finalize_out / "finalize_manifest.json"
     assert finalize_manifest_path.exists()
     finalize_manifest = json.loads(finalize_manifest_path.read_text(encoding="utf-8"))
+    assert finalize_manifest["gene_list"] is None
+    assert finalize_manifest["gene_list_manifest"] == str(gene_list_manifest)
+    assert finalize_manifest["resolved_gene_lists"][sample_id] == str(gene_list)
     assert finalize_manifest["ok_count"] == 1
     assert finalize_manifest["failed_count"] == 0
     result = finalize_manifest["results"][0]
+    assert result["gene_list"] == str(gene_list)
     assert result["status"] == "ok"
     assert result["validation"]["is_valid"] is True
     assert result["validation"]["missing_nodes"] == []

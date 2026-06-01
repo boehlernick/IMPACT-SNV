@@ -1,0 +1,241 @@
+{
+  "chromosome_outputs": [
+    {
+      "chromosome": "1",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=1/data.parquet",
+      "row_count": 828704,
+      "status": "ok"
+    },
+    {
+      "chromosome": "2",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=2/data.parquet",
+      "row_count": 858237,
+      "status": "ok"
+    },
+    {
+      "chromosome": "3",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=3/data.parquet",
+      "row_count": 729591,
+      "status": "ok"
+    },
+    {
+      "chromosome": "4",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=4/data.parquet",
+      "row_count": 744810,
+      "status": "ok"
+    },
+    {
+      "chromosome": "5",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=5/data.parquet",
+      "row_count": 657786,
+      "status": "ok"
+    },
+    {
+      "chromosome": "6",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=6/data.parquet",
+      "row_count": 661413,
+      "status": "ok"
+    },
+    {
+      "chromosome": "7",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=7/data.parquet",
+      "row_count": 619545,
+      "status": "ok"
+    },
+    {
+      "chromosome": "8",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=8/data.parquet",
+      "row_count": 565204,
+      "status": "ok"
+    },
+    {
+      "chromosome": "9",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=9/data.parquet",
+      "row_count": 474190,
+      "status": "ok"
+    },
+    {
+      "chromosome": "10",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=10/data.parquet",
+      "row_count": 521484,
+      "status": "ok"
+    },
+    {
+      "chromosome": "11",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=11/data.parquet",
+      "row_count": 505804,
+      "status": "ok"
+    },
+    {
+      "chromosome": "12",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=12/data.parquet",
+      "row_count": 506420,
+      "status": "ok"
+    },
+    {
+      "chromosome": "13",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=13/data.parquet",
+      "row_count": 373201,
+      "status": "ok"
+    },
+    {
+      "chromosome": "14",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=14/data.parquet",
+      "row_count": 342591,
+      "status": "ok"
+    },
+    {
+      "chromosome": "15",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=15/data.parquet",
+      "row_count": 323674,
+      "status": "ok"
+    },
+    {
+      "chromosome": "16",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=16/data.parquet",
+      "row_count": 330153,
+      "status": "ok"
+    },
+    {
+      "chromosome": "17",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=17/data.parquet",
+      "row_count": 310831,
+      "status": "ok"
+    },
+    {
+      "chromosome": "18",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=18/data.parquet",
+      "row_count": 297095,
+      "status": "ok"
+    },
+    {
+      "chromosome": "19",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=19/data.parquet",
+      "row_count": 256706,
+      "status": "ok"
+    },
+    {
+      "chromosome": "20",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=20/data.parquet",
+      "row_count": 240890,
+      "status": "ok"
+    },
+    {
+      "chromosome": "21",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=21/data.parquet",
+      "row_count": 166563,
+      "status": "ok"
+    },
+    {
+      "chromosome": "22",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=22/data.parquet",
+      "row_count": 168551,
+      "status": "ok"
+    },
+    {
+      "chromosome": "X",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=X/data.parquet",
+      "row_count": 357624,
+      "status": "ok"
+    },
+    {
+      "chromosome": "Y",
+      "message": "",
+      "output_parquet": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes/chromosome=Y/data.parquet",
+      "row_count": 19613,
+      "status": "ok"
+    }
+  ],
+  "chromosomes": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "X",
+    "Y"
+  ],
+  "command": "impact-snv extract-genotypes",
+  "created_utc": "2026-06-01T15:44:50.204670+00:00",
+  "errors": [],
+  "input_index": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/merged.vcf.gz.csi",
+  "input_vcf": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/merged.vcf.gz",
+  "out_dir": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/genotypes",
+  "reference_build": "GRCh38",
+  "sample_count": 30,
+  "sample_ids": [
+    "Case10_proband",
+    "Case10_mother",
+    "Case10_father",
+    "Case1_proband",
+    "Case1_mother",
+    "Case1_father",
+    "Case2_proband",
+    "Case2_mother",
+    "Case2_father",
+    "Case3_proband",
+    "Case3_mother",
+    "Case3_father",
+    "Case4_proband",
+    "Case4_mother",
+    "Case4_father",
+    "Case5_proband",
+    "Case5_mother",
+    "Case5_father",
+    "Case6_proband",
+    "Case6_mother",
+    "Case6_father",
+    "Case7_proband",
+    "Case7_mother",
+    "Case7_father",
+    "Case8_proband",
+    "Case8_mother",
+    "Case8_father",
+    "Case9_proband",
+    "Case9_mother",
+    "Case9_father"
+  ],
+  "status": "ok",
+  "version": "1.0.0rc1",
+  "warnings": []
+}

@@ -128,7 +128,7 @@ def run_favor_cli_backend(args: Any) -> int:
 
     stdout_log = out_dir / "logs" / f"{out_prefix}.favor_annotate.stdout.log"
     stderr_log = out_dir / "logs" / f"{out_prefix}.favor_annotate.stderr.log"
-    command = [favor_bin, "annotate", ingested_arg]
+    command = [favor_bin, "annotate", "-o", str(annotated_dir), ingested_arg]
 
     start = utc_now_iso()
     rc = run_logged_command_with_progress(

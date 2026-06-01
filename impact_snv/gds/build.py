@@ -36,6 +36,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 from impact_snv import __version__ as VERSION
+from impact_snv.gene_lists import resolve_sample_gene_list
 from impact_snv.qc.build_qc import run_build_qc
 
 PREPRIORITIZATION_SUFFIX = "_SNV_IMPACT.preprioritization.gds"
@@ -146,6 +147,7 @@ def run_cmd(cmd: Sequence[str], *, dry_run: bool = False) -> None:
 
 
 def flatten_one(args: Any, sample_id: str, chrom: str, flat_parquet: Path, preview_csv: Optional[Path], summary_json: Path) -> None:
+    gene_list_path = args.sample_gene_lists[sample_id]
     if flat_parquet.exists() and not args.force:
         print(f"Skipping existing flat parquet: {flat_parquet}", flush=True)
         return
@@ -156,7 +158,7 @@ def flatten_one(args: Any, sample_id: str, chrom: str, flat_parquet: Path, previ
         str(args.flatten_script),
         "--annotated-dir", str(args.annotated_dir),
         "--genotypes-dir", str(args.genotypes_dir),
-        "--gene-list", str(args.gene_list),
+        "--gene-list", str(gene_list_path),
         "--sample-id", sample_id,
         "--chromosome", chrom,
         "--dosage-threshold", str(args.dosage_threshold),
@@ -236,7 +238,9 @@ def build_manifest_payload(args: Any, samples: Sequence[str], chromosomes: Seque
         "created_utc": utc_now_iso(),
         "annotated_dir": str(args.annotated_dir),
         "genotypes_dir": str(args.genotypes_dir),
-        "gene_list": str(args.gene_list),
+        "gene_list": str(args.gene_list) if getattr(args, "gene_list", None) else None,
+        "gene_list_manifest": str(args.gene_list_manifest) if getattr(args, "gene_list_manifest", None) else None,
+        "resolved_gene_lists": {sample_id: str(path) for sample_id, path in sorted(args.sample_gene_lists.items())},
         "out_dir": str(args.out_dir),
         "samples": list(samples),
         "chromosomes": list(chromosomes),
@@ -262,6 +266,14 @@ def run_build_gds(args: Any) -> int:
 
     samples = load_samples(args.genotypes_dir, args.samples, args.all_samples)
     chromosomes = parse_chromosomes(args.chromosomes)
+    args.sample_gene_lists = {
+        sample_id: resolve_sample_gene_list(
+            sample_id,
+            gene_list=getattr(args, "gene_list", None),
+            gene_list_manifest=getattr(args, "gene_list_manifest", None),
+        )
+        for sample_id in samples
+    }
 
     jobs: list[ChromosomeJobResult] = []
     sample_flat_paths: dict[str, list[Path]] = {s: [] for s in samples}

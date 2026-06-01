@@ -18,7 +18,8 @@ QC_MODES = ("warn", "strict", "off")
 @dataclass(frozen=True)
 class FinalizeGdsArgs:
     input_dir: Path
-    gene_list: Path
+    gene_list: Optional[Path]
+    gene_list_manifest: Optional[Path]
     out_dir: Path
     qc_mode: str
     samples: Optional[list[str]]
@@ -70,6 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_favor_ingest_parser(subparsers)
     add_favor_annotate_parser(subparsers)
     add_extract_genotypes_parser(subparsers)
+    add_build_gene_lists_parser(subparsers)
     add_build_gds_parser(subparsers)
     add_finalize_gds_parser(subparsers)
     add_validate_gds_parser(subparsers)
@@ -160,6 +162,25 @@ def add_extract_genotypes_parser(subparsers: argparse._SubParsersAction) -> None
     p.set_defaults(func=cmd_extract_genotypes)
 
 
+def add_build_gene_lists_parser(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser(
+        "build-gene-lists",
+        help="Query Open Targets from sample and phenotype manifests and write per-sample GeneList files.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    p.add_argument("--samples-manifest", required=True, type=_existing_file)
+    p.add_argument("--phenotypes-manifest", required=True, type=_existing_file)
+    p.add_argument("--out-dir", required=True, type=_path)
+    p.add_argument("--api-url", default="https://api.platform.opentargets.org/api/v4/graphql")
+    p.add_argument("--max-search-hits", type=positive_int, default=10)
+    p.add_argument("--page-size", type=positive_int, default=500)
+    p.add_argument("--manifest-tsv", type=_path)
+    p.add_argument("--manifest-json", type=_path)
+    p.add_argument("--force", action="store_true")
+    p.add_argument("--quiet", action="store_true")
+    p.set_defaults(func=cmd_build_gene_lists)
+
+
 
 def add_favor_annotate_parser(subparsers: argparse._SubParsersAction) -> None:
     p = subparsers.add_parser("favor-annotate", help="Run FAVOR CLI annotate using the tested IMPACT-SNV contract.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -194,7 +215,9 @@ def add_build_gds_parser(subparsers: argparse._SubParsersAction) -> None:
     p = subparsers.add_parser("build-gds", help="Build pre-prioritization per-sample GDS files from FAVOR parquet outputs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument("--annotated-dir", required=True, type=_existing_dir)
     p.add_argument("--genotypes-dir", required=True, type=_existing_dir)
-    p.add_argument("--gene-list", required=True, type=_existing_file)
+    gene_source = p.add_mutually_exclusive_group(required=True)
+    gene_source.add_argument("--gene-list", type=_existing_file)
+    gene_source.add_argument("--gene-list-manifest", type=_existing_file)
     p.add_argument("--out-dir", required=True, type=_path)
     p.add_argument("--samples", nargs="+")
     p.add_argument("--all-samples", action="store_true")
@@ -218,7 +241,9 @@ def add_build_gds_parser(subparsers: argparse._SubParsersAction) -> None:
 def add_finalize_gds_parser(subparsers: argparse._SubParsersAction) -> None:
     p = subparsers.add_parser("finalize-gds", help="Score pre-prioritization GDS files and make final IMPACT-VIS-ready outputs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument("--input-dir", required=True, type=_existing_dir)
-    p.add_argument("--gene-list", required=True, type=_existing_file)
+    gene_source = p.add_mutually_exclusive_group(required=True)
+    gene_source.add_argument("--gene-list", type=_existing_file)
+    gene_source.add_argument("--gene-list-manifest", type=_existing_file)
     p.add_argument("--out-dir", required=True, type=_path)
     p.add_argument("--qc-mode", choices=QC_MODES, default="warn")
     p.add_argument("--samples", nargs="+", default=None)
@@ -277,9 +302,16 @@ def cmd_favor_annotate(args: argparse.Namespace) -> int:
     from impact_snv.favor.annotate import run_favor_annotate
     return int(run_favor_annotate(args) or 0)
 
+
 def cmd_extract_genotypes(args: argparse.Namespace) -> int:
     from impact_snv.genotypes.extract import run_extract_genotypes
     return int(run_extract_genotypes(args) or 0)
+
+
+def cmd_build_gene_lists(args: argparse.Namespace) -> int:
+    from impact_snv.gene_lists import run_build_gene_lists
+    return int(run_build_gene_lists(args) or 0)
+
 
 def cmd_build_gds(args: argparse.Namespace) -> int:
     from impact_snv.gds.build import package_path, resource_script, run_build_gds
@@ -291,7 +323,19 @@ def cmd_build_gds(args: argparse.Namespace) -> int:
 
 
 def cmd_finalize_gds(args: argparse.Namespace) -> int:
-    normalized = FinalizeGdsArgs(args.input_dir, args.gene_list, args.out_dir, args.qc_mode, args.samples, args.rscript, args.force, args.no_optimize, args.keep_intermediate, args.manifest_json)
+    normalized = FinalizeGdsArgs(
+        args.input_dir,
+        args.gene_list,
+        args.gene_list_manifest,
+        args.out_dir,
+        args.qc_mode,
+        args.samples,
+        args.rscript,
+        args.force,
+        args.no_optimize,
+        args.keep_intermediate,
+        args.manifest_json,
+    )
     from impact_snv.gds.finalize import run_finalize_gds
     return int(run_finalize_gds(normalized) or 0)
 

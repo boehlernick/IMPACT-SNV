@@ -1,0 +1,11 @@
+﻿sample_id,vcf_path,assembly,sex
+Case1,/home/boehlern/projects/IMPACT/IMPACT-SNV/tests/production_test/Case1_WAS_GRCh38_XLinkedRecessiveHemizygous_Male_Merged_GeneBreaker.vcf.gz,GRCh38,Male
+Case2,/home/boehlern/projects/IMPACT/IMPACT-SNV/tests/production_test/Case2_MSH2_GRCh38_AutosomalDominantDeNovo_Male_Merged_GeneBreaker.vcf.gz,GRCh38,Male
+Case3,/home/boehlern/projects/IMPACT/IMPACT-SNV/tests/production_test/Case3_MALT1_GRCh38_AutosomalRecessiveHomozygous_Female_Merged_GeneBreaker.vcf.gz,GRCh38,Female
+Case4,/home/boehlern/projects/IMPACT/IMPACT-SNV/tests/production_test/Case4_CFTR_GRCh38_AutosomalRecessiveCompoundHeterozygous_Male_Merged_GeneBreaker.vcf.gz,GRCh38,Male
+Case5,/home/boehlern/projects/IMPACT/IMPACT-SNV/tests/production_test/Case5_MECP2_GRCh38_XLinkedDominantDeNovo_Female_MergedGeneBreaker.vcf.gz,GRCh38,Female
+Case6,/home/boehlern/projects/IMPACT/IMPACT-SNV/tests/production_test/Case6_ABCD1_GRCh38_XLinkedRecessiveHemizygousDeNovo_Male_Merged_GeneBreaker.vcf.gz,GRCh38,Male
+Case7,/home/boehlern/projects/IMPACT/IMPACT-SNV/tests/production_test/Case7_EP300_GRCh38_AutosomalDominantPaternal_Female_Merged_GeneBreaker.vcf.gz,GRCh38,Female
+Case8,/home/boehlern/projects/IMPACT/IMPACT-SNV/tests/production_test/Case8_PTPN11_GRCh38_AutosomalDominantDeNovo_Male_Merged_GeneBreaker.vcf.gz,GRCh38,Male
+Case9,/home/boehlern/projects/IMPACT/IMPACT-SNV/tests/production_test/Case9_COL2A1_GRCh38_AutosomalDominantPaternal_Female_Merged_GeneBreaker.vcf.gz,GRCh38,Female
+Case10,/home/boehlern/projects/IMPACT/IMPACT-SNV/tests/production_test/Case10_ANKRD11_GRCh38_AutosomalDominantMaternal_Male_Merged_GeneBreaker.vcf.gz,GRCh38,Male

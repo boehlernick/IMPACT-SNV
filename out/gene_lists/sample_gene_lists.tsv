@@ -1,0 +1,11 @@
+sample_id	gene_list_path	phenotype_count	gene_count	max_global_score	resolution_strategies
+Case1	/home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case1.GeneList.txt	4	3341	0.762162947462	exact_name_search_hit;top_search_hit
+Case2	/home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case2.GeneList.txt	5	3018	0.872344592105	exact_name_search_hit;top_search_hit
+Case3	/home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case3.GeneList.txt	6	5876	0.789790589745	exact_name_search_hit;top_search_hit
+Case4	/home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case4.GeneList.txt	6	6928	0.891012033663	exact_name_search_hit;top_search_hit
+Case5	/home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case5.GeneList.txt	4	1988	0.797080875089	exact_name_search_hit;top_search_hit
+Case6	/home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case6.GeneList.txt	6	15144	0.895584766037	exact_name_search_hit;top_search_hit
+Case7	/home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case7.GeneList.txt	6	186	0.733405156726	exact_name_search_hit;top_search_hit
+Case8	/home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case8.GeneList.txt	6	4234	0.869458401026	exact_name_search_hit;top_search_hit
+Case9	/home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case9.GeneList.txt	5	1108	0.832727847584	exact_name_search_hit;top_search_hit
+Case10	/home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt	6	4808	0.822262786447	exact_name_search_hit;top_search_hit

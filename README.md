@@ -20,6 +20,7 @@ Implemented package CLI commands are:
 - `favor-ingest`
 - `favor-annotate`
 - `extract-genotypes`
+- `build-gene-lists`
 - `build-gds`
 - `finalize-gds`
 - `validate-gds`
@@ -53,7 +54,7 @@ VCF Files → [Step 1: Merge] → [Step 2: VCF2GDS] → [Step 3: FAVOR Annotate]
 The maintained package CLI exposes the same workflow through more granular local commands:
 
 ```
-VCF Files → impact-snv sanitize-vcfs (when sample IDs collide) → impact-snv merge → impact-snv favor-ingest / favor-annotate + impact-snv extract-genotypes → impact-snv build-gds → impact-snv finalize-gds → impact-snv validate-gds / qc-build
+VCF Files → impact-snv sanitize-vcfs (when sample IDs collide) → impact-snv merge → impact-snv favor-ingest / favor-annotate + impact-snv extract-genotypes → impact-snv build-gene-lists → impact-snv build-gds → impact-snv finalize-gds → impact-snv validate-gds / qc-build
 ```
 
 | Step | Folder | Description | Input | Output |
@@ -61,7 +62,7 @@ VCF Files → impact-snv sanitize-vcfs (when sample IDs collide) → impact-snv 
 | 1 | `step1_vcf_merge/` | Merges multiple VCF files into chromosome-separated files | `.vcf`, `.vcf.gz` | `merged_chr*.vcf.gz` |
 | 2 | `step2_vcf2gds/` | Converts VCF to GDS format for efficient processing | `.vcf.gz` | `merged_chr*.gds` |
 | 3 | `Step3_favorannotator-rap/`, `step3_favorcli_annotation/`, `impact_snv/favor/` | Annotates variants using the selected Step 3 backend | legacy `.gds`, FAVOR-ingested directories, or backend dry-run inputs | canonical `<out_prefix>.annotated` outputs plus compatibility-staged inputs |
-| 4 | `step4_impact_prioritization/`, `impact_snv/gds/` | Scores, finalizes, validates, and QC-checks per-sample outputs | annotated legacy GDS or pre-prioritization per-sample GDS plus `GeneList.txt` | `*_SNV_IMPACT.gds`, manifests, and QC summaries |
+| 4 | `step4_impact_prioritization/`, `impact_snv/gene_lists.py`, `impact_snv/gds/` | Builds phenotype-driven per-sample GeneLists, scores, finalizes, validates, and QC-checks per-sample outputs | annotated legacy GDS or pre-prioritization per-sample GDS plus a single `GeneList.txt` or a per-sample gene-list manifest | `*_SNV_IMPACT.gds`, manifests, and QC summaries |
 
 ## Requirements
 
@@ -91,17 +92,20 @@ The repository still contains **DNAnexus Research Analysis Platform** applets un
 - **Output**: GDS file (`merged_chr*.gds`)
 
 ### Step 3: FAVOR Annotation
-- **`favor-cli` backend input**: FAVOR-ingested directory from `impact-snv favor-ingest`
+- **`favor-cli` backend input**: FAVOR-ingested directory (`<out_prefix>.ingested`) produced by `impact-snv favor-ingest`. The input VCF must have a `.csi` or `.tbi` index alongside it.
 - **`legacy-favorannotator` backend input**: existing legacy annotated/genotype directories for compatibility staging
 - **`favor-cli-skeleton` backend input**: GDS or VCF for dry-run planning
-- **Output**: Canonical `<out_prefix>.annotated` output consumed by `impact-snv build-gds`; genotype extraction is handled separately by `impact-snv extract-genotypes`
+- **Output**: Canonical `<out_prefix>.annotated` directory written to `<out_dir>`, consumed by `impact-snv build-gds`; genotype extraction is handled separately by `impact-snv extract-genotypes`
 
 The package CLI `legacy-favorannotator` backend stages existing legacy outputs for downstream compatibility. It does not locally invoke the old DNAnexus FAVORannotator applet.
 
 ### Step 4: IMPACT Prioritization And Finalization
 - **Input**:
   - Legacy annotated chromosome GDS files from Step 3, or pre-prioritization per-sample GDS files from `impact-snv build-gds`
-  - Gene-disease association file (`GeneList.txt`) - tab-separated with columns:
+  - Gene-disease association input, either:
+    - one shared `GeneList.txt`, or
+    - a per-sample gene-list manifest produced by `impact-snv build-gene-lists`
+  - Each `GeneList.txt`-style file remains tab-separated with columns:
     - `symbol`: Gene symbol (e.g., `GJB2`, `OTOF`)
     - `globalScore`: Open Targets association score (0-1)
 - **Output**: Per-sample final GDS files (`{sample_id}_SNV_IMPACT.gds`)
@@ -194,17 +198,34 @@ impact-snv merge \
 
 By default the sanitizer derives a case prefix from the filename, so trio sample IDs like `proband`, `mother`, and `father` become names such as `Case1_proband`, `Case1_mother`, and `Case1_father`.
 
-Backend-aware Step 3 annotation examples:
+To build phenotype-specific per-sample GeneLists from Open Targets, provide a sample manifest and a phenotype manifest. The resulting `sample_gene_lists.tsv` can be passed directly into `build-gds` and `finalize-gds`:
 
 ```bash
-impact-snv favor-annotate \
-  --backend favor-cli \
-  --ingested-dir path/to/case1.ingested \
+impact-snv build-gene-lists \
+  --samples-manifest tests/production_test/samples.csv \
+  --phenotypes-manifest tests/production_test/phenotypes.csv \
+  --out-dir out/gene_lists
+```
+
+Step 3 runs in two stages. First, ingest the merged VCF into FAVOR's variant-set format (`<out_prefix>.ingested`). The input VCF must have a `.csi` or `.tbi` index alongside it:
+
+```bash
+impact-snv favor-ingest \
+  --input-vcf out/merged.vcf.gz \
   --out-dir out/ \
   --out-prefix case1
 ```
 
-Legacy compatibility staging mode:
+Then annotate the ingested variant set against the FAVOR database. This is the long-running step — expect several hours for WGS-scale cohorts. Future releases will seek to parallelize this operation to increase efficiency. The default backend is `favor-cli`; `--backend` may be omitted:
+
+```bash
+impact-snv favor-annotate \
+  --ingested-dir out/case1.ingested \
+  --out-dir out/ \
+  --out-prefix case1
+```
+
+Legacy compatibility staging (for pre-existing FAVORannotator outputs):
 
 ```bash
 impact-snv favor-annotate \
@@ -218,23 +239,23 @@ impact-snv favor-annotate \
 
 This backend stages pre-existing legacy outputs only. It does not execute the DNAnexus `Step3_favorannotator-rap/` applet locally.
 
-`favor annotate` does not replace genotype extraction. For the maintained local release path, extract genotypes separately and then build, finalize, validate, and QC the per-sample GDS outputs:
+`impact-snv favor-annotate` does not replace genotype extraction. For the maintained local release path, extract genotypes separately and then build, finalize, validate, and QC the per-sample GDS outputs:
 
 ```bash
 impact-snv extract-genotypes \
-  --input-vcf path/to/merged.vcf.gz \
+  --input-vcf out/merged.vcf.gz \
   --out-dir out/genotypes
 
 impact-snv build-gds \
-  --annotated-dir out/case1.annotated \
+  --annotated-dir out/merged.annotated \
   --genotypes-dir out/genotypes \
-  --gene-list path/to/GeneList.txt \
+  --gene-list-manifest out/gene_lists/sample_gene_lists.tsv \
   --out-dir out/build \
   --all-samples
 
 impact-snv finalize-gds \
   --input-dir out/build/gds_merged \
-  --gene-list path/to/GeneList.txt \
+  --gene-list-manifest out/gene_lists/sample_gene_lists.tsv \
   --out-dir out/final
 
 impact-snv validate-gds \
@@ -276,9 +297,9 @@ Variants are assigned to tiers based on evidence strength:
 | **Tier 3** | Nonsynonymous, nonframeshift, stoploss | 20 + 80 × globalScore |
 | **Tier 4** | APC protein function evidence | 100 × (0.5 × APC + 0.5 × globalScore) |
 
-## Gene-Disease Association File
+## Gene-Disease Association Files
 
-The `GeneList.txt` file should contain phenotype-specific gene associations from [Open Targets](https://www.opentargets.org/):
+Each `GeneList.txt`-style file should contain phenotype-specific gene associations from [Open Targets](https://www.opentargets.org/):
 
 ```
 symbol	globalScore
@@ -288,10 +309,13 @@ MYO6	0.845566359
 ...
 ```
 
-Generate this file by:
-1. Querying Open Targets for your phenotype of interest
-2. Exporting gene associations with global scores
-3. Formatting as tab-separated with header row
+The maintained CLI can now generate these files directly from per-sample phenotype manifests:
+1. `impact-snv build-gene-lists` reads a samples manifest and a phenotype manifest.
+2. For each sample, it queries Open Targets for every phenotype or HPO term assigned to that sample.
+3. It retains the union of all returned gene symbols and keeps the highest `globalScore` observed for each symbol across that sample's phenotype queries.
+4. It writes one `GeneList.txt`-compatible file per sample plus a `sample_gene_lists.tsv` manifest that `build-gds` and `finalize-gds` can consume.
+
+When phenotype text is provided without an ontology ID, IMPACT-SNV resolves it through the Open Targets search endpoint, prefers an exact normalized name match when available, and otherwise falls back to the top disease/phenotype search hit. The selected disease IDs and match strategies are recorded in the JSON manifest for auditability.
 
 ## Refactor Planning and Contracts
 

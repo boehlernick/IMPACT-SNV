@@ -1,0 +1,55 @@
+﻿sample_id,phenotype,hpo_id,status
+Case1,Eczema,,observed
+Case1,Thrombocytopenia,,observed
+Case1,Otitis media,,observed
+Case1,Hematemesis,,observed
+Case2,Intestinal polyposis,,observed
+Case2,Seizure,,observed
+Case2,Hypertonia,,observed
+Case2,Fatigue,,observed
+Case2,Abdominal pain,,observed
+Case3,Eczema,,observed
+Case3,Atopic dermatitis,,observed
+Case3,Recurrent skin infections,,observed
+Case3,Gastrointestinal inflammation,,observed
+Case3,Pneumonia,,observed
+Case3,Recurrent respiratory infections,,observed
+Case4,Biliary cirrhosis,,observed
+Case4,Immunodeficiency,,observed
+Case4,Malabsorption,,observed
+Case4,Pulmonary fibrosis,,observed
+Case4,Recurrent respiratory infections,,observed
+Case4,Exocrine pancreatic insufficiency,,observed
+Case5,Seizure,,observed
+Case5,Spasticity,,observed
+Case5,Postnatal microcephaly,,observed
+Case5,Intellectual disability profound,,observed
+Case6,Mental deterioration,,observed
+Case6,Seizure,,observed
+Case6,Psychosis,,observed
+Case6,Primary adrenal insufficiency,,observed
+Case6,Neurodegeneration,,observed
+Case6,Abnormality of the cerebral white matter,,observed
+Case7,Moderate intellectual disability,,observed
+Case7,arched eyebrows,,observed
+Case7,downslanting palpebral fissures,,observed
+Case7,prominent nose,,observed
+Case7,micrognathia,,observed
+Case7,broad thumbs,,observed
+Case8,Short stature,,observed
+Case8,congenital heart disease,,observed
+Case8,wide neck,,observed
+Case8,low set posteriorly rotated ears,,observed
+Case8,widely spaced eyes,,observed
+Case8,short and broad nose,,observed
+Case9,Disproportionate tall stature,,observed
+Case9,Midface retrusion,,observed
+Case9,Severe sensorineural hearing impairment,,observed
+Case9,High myopia,,observed
+Case9,Cleft palate,,observed
+Case10,Intellectual disability,,observed
+Case10,short stature,,observed
+Case10,microcephaly,,observed
+Case10,triangular face,,observed
+Case10,large and prominent ears,,observed
+Case10,hypertelorism,,observed

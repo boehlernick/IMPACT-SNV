@@ -1,0 +1,544 @@
+impact-snv build-gds   --annotated-dir out/merged.annotated   --genotypes-dir out/genotypes   --gene-list-manifest out/gene_lists/sample_gene_lists.tsv   --out-dir out/build   --all-samples
+...
+...
+##> 2026-06-01 12:00:22
+Appending IMPACT/FAVOR annotations to GDS...
+Optimizing GDS...
+Open ‘Case10_proband_chr6.gds’
+Adding run-length encoding for chromosomes ...  [Done]
+Clean up the fragments of GDS file:
+    open the file 'out/build/gds_by_chrom/Case10_proband_chr6.gds' (1.3M)
+    # of fragments: 330
+    save to 'out/build/gds_by_chrom/Case10_proband_chr6.gds.tmp'
+    rename 'out/build/gds_by_chrom/Case10_proband_chr6.gds.tmp' (1.2M, reduced: 51.0K)
+    # of fragments: 132
+Running post-write sanity check...
+Done: out/build/gds_by_chrom/Case10_proband_chr6.gds
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 7 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr7.flat.parquet --summary-json out/build/summary/Case10_proband_chr7.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=7/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 8 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr8.flat.parquet --summary-json out/build/summary/Case10_proband_chr8.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=8/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 9 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr9.flat.parquet --summary-json out/build/summary/Case10_proband_chr9.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=9/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 10 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr10.flat.parquet --summary-json out/build/summary/Case10_proband_chr10.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=10/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 11 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr11.flat.parquet --summary-json out/build/summary/Case10_proband_chr11.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=11/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 12 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr12.flat.parquet --summary-json out/build/summary/Case10_proband_chr12.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=12/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 13 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr13.flat.parquet --summary-json out/build/summary/Case10_proband_chr13.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=13/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 14 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr14.flat.parquet --summary-json out/build/summary/Case10_proband_chr14.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=14/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 15 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr15.flat.parquet --summary-json out/build/summary/Case10_proband_chr15.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=15/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 16 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr16.flat.parquet --summary-json out/build/summary/Case10_proband_chr16.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=16/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 17 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr17.flat.parquet --summary-json out/build/summary/Case10_proband_chr17.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=17/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 18 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr18.flat.parquet --summary-json out/build/summary/Case10_proband_chr18.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=18/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 19 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr19.flat.parquet --summary-json out/build/summary/Case10_proband_chr19.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=19/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 20 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr20.flat.parquet --summary-json out/build/summary/Case10_proband_chr20.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=20/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 21 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr21.flat.parquet --summary-json out/build/summary/Case10_proband_chr21.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=21/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome 22 --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chr22.flat.parquet --summary-json out/build/summary/Case10_proband_chr22.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=22/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome X --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chrX.flat.parquet --summary-json out/build/summary/Case10_proband_chrX.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=X/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_proband --chromosome Y --dosage-threshold 0.0 --out out/build/flat/Case10_proband_chrY.flat.parquet --summary-json out/build/summary/Case10_proband_chrY.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=Y/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 1 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr1.flat.parquet --summary-json out/build/summary/Case10_mother_chr1.summary.json
+Flatten preview completed
+output:                          out/build/flat/Case10_mother_chr1.flat.parquet
+sample_id:                       Case10_mother
+chromosome:                      1
+gene_count:                      4808
+total_genotype_rows:             828704
+carried_variants_for_sample:     449336
+total_annotation_rows:           842362
+gene_matching_annotation_rows:   205831
+final_carried_gene_matched_rows: 107513
+rows_with_clnsig:                3028
+rows_with_apc_protein_function:  85261
+matched_genes_observed:          ABCA4, ACADM, ACBD6, ADAMTSL4, ADAR, ADCY10, ADGRL2, AGO1, AGO3, AGRN, AGT, AHCYL1, AHDC1, AIM2, AKR1A1, AKT3, ALDH4A1, ALG14, ALPL, ALX3, ...
++ Rscript /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/resources/favor_flat_to_seqarray_gds.R --input out/build/flat/Case10_mother_chr1.flat.parquet --output out/build/gds_by_chrom/Case10_mother_chr1.gds --sample-id Case10_mother
+- The project is out-of-sync -- use `renv::status()` for details.
+Using embedded required_columns; Python contract not available
+Resolved options:
+  input:           out/build/flat/Case10_mother_chr1.flat.parquet
+  output:          out/build/gds_by_chrom/Case10_mother_chr1.gds
+  sample_id:       Case10_mother
+  keep_temp_vcf:   FALSE
+  temp_vcf:        
+  storage_option:  ZIP_RA
+  optimize:        TRUE
+Reading flat parquet: out/build/flat/Case10_mother_chr1.flat.parquet
+Preparing SeqArray GDS
+  sample_id: Case10_mother
+  variants:  107513
+Writing temporary VCF: /tmp/RtmpAheCBR/Case10_mother_83ceb272d5b9d.vcf
+Using SeqArray storage option: ZIP_RA
+Converting temporary VCF to SeqArray GDS: out/build/gds_by_chrom/Case10_mother_chr1.gds
+##< 2026-06-01 12:02:29
+Variant Call Format (VCF) Import:
+    file:
+        Case10_mother_83ceb272d5b9d.vcf (4.0M)
+    file format: VCFv4.2
+    genome reference: <unknown>
+    # of sets of chromosomes (ploidy): 2
+    # of samples: 1
+    genotype field: GT
+    genotype storage: bit2
+    compression method: customized
+    INFO:
+    FORMAT: DS
+Output:
+    out/build/gds_by_chrom/Case10_mother_chr1.gds
+    [Progress Info: Case10_mother_chr1.gds.progress.txt]
+Parsing 'Case10_mother_83ceb272d5b9d.vcf':
++ genotype/data   { Bit2 2x1x107513 ZIP_ra, 16B }
+Digests:
+    sample.id  [md5: 54198eba06df6f5b67dfa6c46afb7de9]
+    variant.id  [md5: 053b54e25d3221984ee3ea85a81c0dce]
+    position  [md5: 5f9e10494a080c42ea53ba824d6e34fc]
+    chromosome  [md5: 6221a19c4e529a9e2b1fbe7508d472e7]
+    allele  [md5: 85321ea5a4719b3f301d0f315ab9ddae]
+    genotype  [md5: 06cf8b5651af52fe7c73e9e42726e5a8]
+    phase  [md5: 9108eaf88020c5ba55b4d9bad0a52b82]
+    annotation/id  [md5: d0c332f5c138f5224f446eb6504c7949]
+    annotation/qual  [md5: 6c155e9f02927177fcc7b0ae33bb5273]
+    annotation/filter  [md5: 093a617b9491adf9d1206679a3bfa303]
+    annotation/format/DS  [md5: 5da96a896cb9a3c5754e1c7f721e1a81]
+Done.
+##> 2026-06-01 12:02:30
+Appending IMPACT/FAVOR annotations to GDS...
+Optimizing GDS...
+Open ‘Case10_mother_chr1.gds’
+Adding run-length encoding for chromosomes ...  [Done]
+Clean up the fragments of GDS file:
+    open the file 'out/build/gds_by_chrom/Case10_mother_chr1.gds' (3.0M)
+    # of fragments: 328
+    save to 'out/build/gds_by_chrom/Case10_mother_chr1.gds.tmp'
+    rename 'out/build/gds_by_chrom/Case10_mother_chr1.gds.tmp' (2.9M, reduced: 71.5K)
+    # of fragments: 130
+Running post-write sanity check...
+Done: out/build/gds_by_chrom/Case10_mother_chr1.gds
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 2 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr2.flat.parquet --summary-json out/build/summary/Case10_mother_chr2.summary.json
+Flatten preview completed
+output:                          out/build/flat/Case10_mother_chr2.flat.parquet
+sample_id:                       Case10_mother
+chromosome:                      2
+gene_count:                      4808
+total_genotype_rows:             858237
+carried_variants_for_sample:     464545
+total_annotation_rows:           873829
+gene_matching_annotation_rows:   159097
+final_carried_gene_matched_rows: 84020
+rows_with_clnsig:                1934
+rows_with_apc_protein_function:  67385
+matched_genes_observed:          ABI2, ACKR3, ACTR2, ADAM17, ADCY3, AFF3, AGAP1, AGBL5, AGFG1, ALK, ALMS1, ALPP, ALS2, ANTXR1, ARHGAP15, ARL5A, ARMC9, ASAP2, ASXL2, ATIC, ...
++ Rscript /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/resources/favor_flat_to_seqarray_gds.R --input out/build/flat/Case10_mother_chr2.flat.parquet --output out/build/gds_by_chrom/Case10_mother_chr2.gds --sample-id Case10_mother
+- The project is out-of-sync -- use `renv::status()` for details.
+Using embedded required_columns; Python contract not available
+Resolved options:
+  input:           out/build/flat/Case10_mother_chr2.flat.parquet
+  output:          out/build/gds_by_chrom/Case10_mother_chr2.gds
+  sample_id:       Case10_mother
+  keep_temp_vcf:   FALSE
+  temp_vcf:        
+  storage_option:  ZIP_RA
+  optimize:        TRUE
+Reading flat parquet: out/build/flat/Case10_mother_chr2.flat.parquet
+Preparing SeqArray GDS
+  sample_id: Case10_mother
+  variants:  84020
+Writing temporary VCF: /tmp/RtmpSK5XaD/Case10_mother_83f073b5769b.vcf
+Using SeqArray storage option: ZIP_RA
+Converting temporary VCF to SeqArray GDS: out/build/gds_by_chrom/Case10_mother_chr2.gds
+##< 2026-06-01 12:04:30
+Variant Call Format (VCF) Import:
+    file:
+        Case10_mother_83f073b5769b.vcf (3.1M)
+    file format: VCFv4.2
+    genome reference: <unknown>
+    # of sets of chromosomes (ploidy): 2
+    # of samples: 1
+    genotype field: GT
+    genotype storage: bit2
+    compression method: customized
+    INFO:
+    FORMAT: DS
+Output:
+    out/build/gds_by_chrom/Case10_mother_chr2.gds
+    [Progress Info: Case10_mother_chr2.gds.progress.txt]
+Parsing 'Case10_mother_83f073b5769b.vcf':
++ genotype/data   { Bit2 2x1x84020 ZIP_ra, 16B }
+Digests:
+    sample.id  [md5: 54198eba06df6f5b67dfa6c46afb7de9]
+    variant.id  [md5: a3041ffad1461d4cd6a0d64f6ade2889]
+    position  [md5: e41999a773701507e8077d10c7d94965]
+    chromosome  [md5: f6324d495e5183ef994c5cf7eed15d1d]
+    allele  [md5: 5bd8aad8f67a984d8f1d00ac128c61fa]
+    genotype  [md5: 17be36c8d522e289c2142c41e3683f22]
+    phase  [md5: 91b1918db21f463002395c1d9fd83c0f]
+    annotation/id  [md5: b3cce00fed78a8784f2a543b226dde0f]
+    annotation/qual  [md5: 6f528912ce982c83bb4e26586d331968]
+    annotation/filter  [md5: 315421ab205de2c6a4e32d1d5f80f140]
+    annotation/format/DS  [md5: c0fe10b958a9f49920bdac8cc333d1e0]
+Done.
+##> 2026-06-01 12:04:30
+Appending IMPACT/FAVOR annotations to GDS...
+Optimizing GDS...
+Open ‘Case10_mother_chr2.gds’
+Adding run-length encoding for chromosomes ...  [Done]
+Clean up the fragments of GDS file:
+    open the file 'out/build/gds_by_chrom/Case10_mother_chr2.gds' (2.4M)
+    # of fragments: 325
+    save to 'out/build/gds_by_chrom/Case10_mother_chr2.gds.tmp'
+    rename 'out/build/gds_by_chrom/Case10_mother_chr2.gds.tmp' (2.3M, reduced: 93.4K)
+    # of fragments: 130
+Running post-write sanity check...
+Done: out/build/gds_by_chrom/Case10_mother_chr2.gds
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 3 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr3.flat.parquet --summary-json out/build/summary/Case10_mother_chr3.summary.json
+Flatten preview completed
+output:                          out/build/flat/Case10_mother_chr3.flat.parquet
+sample_id:                       Case10_mother
+chromosome:                      3
+gene_count:                      4808
+total_genotype_rows:             729591
+carried_variants_for_sample:     397643
+total_annotation_rows:           745336
+gene_matching_annotation_rows:   184711
+final_carried_gene_matched_rows: 95072
+rows_with_clnsig:                1506
+rows_with_apc_protein_function:  76706
+matched_genes_observed:          ACAA1, ACAD9, ACTL6A, ACY1, ADCY5, ADIPOQ, AGTR1, AHSG, ALG3, ANKRD28, ANO10, AP2M1, ARHGAP31, ARIH2, ARL13B, ARPC4, ARPP21, ATG7, ATP13A4, ATP2B2, ...
++ Rscript /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/resources/favor_flat_to_seqarray_gds.R --input out/build/flat/Case10_mother_chr3.flat.parquet --output out/build/gds_by_chrom/Case10_mother_chr3.gds --sample-id Case10_mother
+- The project is out-of-sync -- use `renv::status()` for details.
+Using embedded required_columns; Python contract not available
+Resolved options:
+  input:           out/build/flat/Case10_mother_chr3.flat.parquet
+  output:          out/build/gds_by_chrom/Case10_mother_chr3.gds
+  sample_id:       Case10_mother
+  keep_temp_vcf:   FALSE
+  temp_vcf:        
+  storage_option:  ZIP_RA
+  optimize:        TRUE
+Reading flat parquet: out/build/flat/Case10_mother_chr3.flat.parquet
+Preparing SeqArray GDS
+  sample_id: Case10_mother
+  variants:  95072
+Writing temporary VCF: /tmp/RtmpKtjeH1/Case10_mother_840ef3be2a64f.vcf
+Using SeqArray storage option: ZIP_RA
+Converting temporary VCF to SeqArray GDS: out/build/gds_by_chrom/Case10_mother_chr3.gds
+##< 2026-06-01 12:06:17
+Variant Call Format (VCF) Import:
+    file:
+        Case10_mother_840ef3be2a64f.vcf (3.5M)
+    file format: VCFv4.2
+    genome reference: <unknown>
+    # of sets of chromosomes (ploidy): 2
+    # of samples: 1
+    genotype field: GT
+    genotype storage: bit2
+    compression method: customized
+    INFO:
+    FORMAT: DS
+Output:
+    out/build/gds_by_chrom/Case10_mother_chr3.gds
+    [Progress Info: Case10_mother_chr3.gds.progress.txt]
+Parsing 'Case10_mother_840ef3be2a64f.vcf':
++ genotype/data   { Bit2 2x1x95072 ZIP_ra, 16B }
+Digests:
+    sample.id  [md5: 54198eba06df6f5b67dfa6c46afb7de9]
+    variant.id  [md5: c123bd4a726fccf03a27e69456c4fe33]
+    position  [md5: 967fb40c2f904a6932763937843f8465]
+    chromosome  [md5: 803f328a8bd1c6c3ece21f12ef932c26]
+    allele  [md5: b966b4abe372157084ac0507aa6876ff]
+    genotype  [md5: 0e46ebacbcd740b8ee890951b2260946]
+    phase  [md5: a228bc5e19f17c62577a230416eae978]
+    annotation/id  [md5: ba4f2108e2753219eacdba27cf40a088]
+    annotation/qual  [md5: c2d887690b831d0f01cfcae055caa645]
+    annotation/filter  [md5: 6b59527020dbbbdb0153b95032f6d3c8]
+    annotation/format/DS  [md5: f52bbbe2430275f58b499a77a39d5c30]
+Done.
+##> 2026-06-01 12:06:17
+Appending IMPACT/FAVOR annotations to GDS...
+Optimizing GDS...
+Open ‘Case10_mother_chr3.gds’
+Adding run-length encoding for chromosomes ...  [Done]
+Clean up the fragments of GDS file:
+    open the file 'out/build/gds_by_chrom/Case10_mother_chr3.gds' (2.6M)
+    # of fragments: 325
+    save to 'out/build/gds_by_chrom/Case10_mother_chr3.gds.tmp'
+    rename 'out/build/gds_by_chrom/Case10_mother_chr3.gds.tmp' (2.5M, reduced: 105.7K)
+    # of fragments: 130
+Running post-write sanity check...
+Done: out/build/gds_by_chrom/Case10_mother_chr3.gds
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 4 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr4.flat.parquet --summary-json out/build/summary/Case10_mother_chr4.summary.json
+Flatten preview completed
+output:                          out/build/flat/Case10_mother_chr4.flat.parquet
+sample_id:                       Case10_mother
+chromosome:                      4
+gene_count:                      4808
+total_genotype_rows:             744810
+carried_variants_for_sample:     405594
+total_annotation_rows:           760678
+gene_matching_annotation_rows:   127922
+final_carried_gene_matched_rows: 66391
+rows_with_clnsig:                1237
+rows_with_apc_protein_function:  54045
+matched_genes_observed:          ABCG2, ADAMTS3, ADD1, ADH5, AFF1, AFM, AFP, AGA, AIMP1, ALB, ANAPC4, ANK2, ANKRD17, ANXA5, ARHGAP10, ATOH1, BBS7, BMP3, BMPR1B, C4orf50, ...
++ Rscript /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/resources/favor_flat_to_seqarray_gds.R --input out/build/flat/Case10_mother_chr4.flat.parquet --output out/build/gds_by_chrom/Case10_mother_chr4.gds --sample-id Case10_mother
+- The project is out-of-sync -- use `renv::status()` for details.
+Using embedded required_columns; Python contract not available
+Resolved options:
+  input:           out/build/flat/Case10_mother_chr4.flat.parquet
+  output:          out/build/gds_by_chrom/Case10_mother_chr4.gds
+  sample_id:       Case10_mother
+  keep_temp_vcf:   FALSE
+  temp_vcf:        
+  storage_option:  ZIP_RA
+  optimize:        TRUE
+Reading flat parquet: out/build/flat/Case10_mother_chr4.flat.parquet
+Preparing SeqArray GDS
+  sample_id: Case10_mother
+  variants:  66391
+Writing temporary VCF: /tmp/RtmpRf6E3b/Case10_mother_842c16955caff.vcf
+Using SeqArray storage option: ZIP_RA
+Converting temporary VCF to SeqArray GDS: out/build/gds_by_chrom/Case10_mother_chr4.gds
+##< 2026-06-01 12:07:56
+Variant Call Format (VCF) Import:
+    file:
+        Case10_mother_842c16955caff.vcf (2.5M)
+    file format: VCFv4.2
+    genome reference: <unknown>
+    # of sets of chromosomes (ploidy): 2
+    # of samples: 1
+    genotype field: GT
+    genotype storage: bit2
+    compression method: customized
+    INFO:
+    FORMAT: DS
+Output:
+    out/build/gds_by_chrom/Case10_mother_chr4.gds
+    [Progress Info: Case10_mother_chr4.gds.progress.txt]
+Parsing 'Case10_mother_842c16955caff.vcf':
++ genotype/data   { Bit2 2x1x66391 ZIP_ra, 16B }
+Digests:
+    sample.id  [md5: 54198eba06df6f5b67dfa6c46afb7de9]
+    variant.id  [md5: aa79236cd1704bc15bbd907bcc816c82]
+    position  [md5: 200b4f8a94bc4a1fc070fefed63f303f]
+    chromosome  [md5: 73209db1e409639ade04b60605003bfa]
+    allele  [md5: a581c0ab1c7b35e660da5889991e0c2a]
+    genotype  [md5: 5fb8cf2b044b2647f5a11698668bd8fc]
+    phase  [md5: 8d7e820f06607c5a2343088aee4eb27f]
+    annotation/id  [md5: f8c5d662ed4da981058e9f214a5042f4]
+    annotation/qual  [md5: 14ff34f0ba1d57502133be460a35cd94]
+    annotation/filter  [md5: 9adb0025a31f4250a694af1b15c29e9e]
+    annotation/format/DS  [md5: 2b3ef5ec3d0e3583560e898ae61c6f01]
+Done.
+##> 2026-06-01 12:07:57
+Appending IMPACT/FAVOR annotations to GDS...
+Optimizing GDS...
+Open ‘Case10_mother_chr4.gds’
+Adding run-length encoding for chromosomes ...  [Done]
+Clean up the fragments of GDS file:
+    open the file 'out/build/gds_by_chrom/Case10_mother_chr4.gds' (1.9M)
+    # of fragments: 325
+    save to 'out/build/gds_by_chrom/Case10_mother_chr4.gds.tmp'
+    rename 'out/build/gds_by_chrom/Case10_mother_chr4.gds.tmp' (1.8M, reduced: 73.9K)
+    # of fragments: 130
+Running post-write sanity check...
+Done: out/build/gds_by_chrom/Case10_mother_chr4.gds
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 5 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr5.flat.parquet --summary-json out/build/summary/Case10_mother_chr5.summary.json
+Flatten preview completed
+output:                          out/build/flat/Case10_mother_chr5.flat.parquet
+sample_id:                       Case10_mother
+chromosome:                      5
+gene_count:                      4808
+total_genotype_rows:             657786
+carried_variants_for_sample:     360596
+total_annotation_rows:           672941
+gene_matching_annotation_rows:   123719
+final_carried_gene_matched_rows: 66057
+rows_with_clnsig:                1616
+rows_with_apc_protein_function:  53272
+matched_genes_observed:          ADAMTS2, ADGRV1, AFF4, ALDH7A1, AMACR, ANKH, AP3B1, APBB3, APC, ARHGAP26, ARHGEF28, ARSB, B4GALT7, BOD1, BRD8, CAMK2A, CAMK4, CANX, CCNH, CCT5, ...
++ Rscript /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/resources/favor_flat_to_seqarray_gds.R --input out/build/flat/Case10_mother_chr5.flat.parquet --output out/build/gds_by_chrom/Case10_mother_chr5.gds --sample-id Case10_mother
+- The project is out-of-sync -- use `renv::status()` for details.
+Using embedded required_columns; Python contract not available
+Resolved options:
+  input:           out/build/flat/Case10_mother_chr5.flat.parquet
+  output:          out/build/gds_by_chrom/Case10_mother_chr5.gds
+  sample_id:       Case10_mother
+  keep_temp_vcf:   FALSE
+  temp_vcf:        
+  storage_option:  ZIP_RA
+  optimize:        TRUE
+Reading flat parquet: out/build/flat/Case10_mother_chr5.flat.parquet
+Preparing SeqArray GDS
+  sample_id: Case10_mother
+  variants:  66057
+Writing temporary VCF: /tmp/RtmpdeeQVI/Case10_mother_8447310e0f04.vcf
+Using SeqArray storage option: ZIP_RA
+Converting temporary VCF to SeqArray GDS: out/build/gds_by_chrom/Case10_mother_chr5.gds
+##< 2026-06-01 12:09:25
+Variant Call Format (VCF) Import:
+    file:
+        Case10_mother_8447310e0f04.vcf (2.5M)
+    file format: VCFv4.2
+    genome reference: <unknown>
+    # of sets of chromosomes (ploidy): 2
+    # of samples: 1
+    genotype field: GT
+    genotype storage: bit2
+    compression method: customized
+    INFO:
+    FORMAT: DS
+Output:
+    out/build/gds_by_chrom/Case10_mother_chr5.gds
+    [Progress Info: Case10_mother_chr5.gds.progress.txt]
+Parsing 'Case10_mother_8447310e0f04.vcf':
++ genotype/data   { Bit2 2x1x66057 ZIP_ra, 16B }
+Digests:
+    sample.id  [md5: 54198eba06df6f5b67dfa6c46afb7de9]
+    variant.id  [md5: 5f6d7ec3dcaa9f196797abc1aede55c3]
+    position  [md5: 11acd431682990ed9578d7099484120f]
+    chromosome  [md5: 2418acc781cdcd305a9239021e6f6607]
+    allele  [md5: 09847868f1fda59597ed59660db4347b]
+    genotype  [md5: a8d602d7cbd52d8cb41eb75ce0ceb108]
+    phase  [md5: e7263e24294d3ab4c8a7c419f88744ce]
+    annotation/id  [md5: 28b7eee514b89279fb144bc924648006]
+    annotation/qual  [md5: b8d59ee8b326dd37ec031ba0ca3dd953]
+    annotation/filter  [md5: 04fb5531895b641c244b72e41830038f]
+    annotation/format/DS  [md5: c4994931caf7228d20cfbb6c6ee8c0ff]
+Done.
+##> 2026-06-01 12:09:25
+Appending IMPACT/FAVOR annotations to GDS...
+Optimizing GDS...
+Open ‘Case10_mother_chr5.gds’
+Adding run-length encoding for chromosomes ...  [Done]
+Clean up the fragments of GDS file:
+    open the file 'out/build/gds_by_chrom/Case10_mother_chr5.gds' (1.9M)
+    # of fragments: 325
+    save to 'out/build/gds_by_chrom/Case10_mother_chr5.gds.tmp'
+    rename 'out/build/gds_by_chrom/Case10_mother_chr5.gds.tmp' (1.8M, reduced: 73.6K)
+    # of fragments: 130
+Running post-write sanity check...
+Done: out/build/gds_by_chrom/Case10_mother_chr5.gds
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 6 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr6.flat.parquet --summary-json out/build/summary/Case10_mother_chr6.summary.json
+Flatten preview completed
+output:                          out/build/flat/Case10_mother_chr6.flat.parquet
+sample_id:                       Case10_mother
+chromosome:                      6
+gene_count:                      4808
+total_genotype_rows:             661413
+carried_variants_for_sample:     368120
+total_annotation_rows:           442368
+gene_matching_annotation_rows:   87144
+final_carried_gene_matched_rows: 46160
+rows_with_clnsig:                999
+rows_with_apc_protein_function:  37179
+matched_genes_observed:          AARS2, ADAT2, ADGRB3, AGER, AGPAT4, AHI1, AKIRIN2, ALDH5A1, AMD1, ARID1B, ASCC3, ATF6B, ATG5, ATXN1, BAG2, BAK1, BMP5, BMP6, BRD2, C4A, ...
++ Rscript /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/resources/favor_flat_to_seqarray_gds.R --input out/build/flat/Case10_mother_chr6.flat.parquet --output out/build/gds_by_chrom/Case10_mother_chr6.gds --sample-id Case10_mother
+- The project is out-of-sync -- use `renv::status()` for details.
+Using embedded required_columns; Python contract not available
+Resolved options:
+  input:           out/build/flat/Case10_mother_chr6.flat.parquet
+  output:          out/build/gds_by_chrom/Case10_mother_chr6.gds
+  sample_id:       Case10_mother
+  keep_temp_vcf:   FALSE
+  temp_vcf:        
+  storage_option:  ZIP_RA
+  optimize:        TRUE
+Reading flat parquet: out/build/flat/Case10_mother_chr6.flat.parquet
+Preparing SeqArray GDS
+  sample_id: Case10_mother
+  variants:  46160
+Writing temporary VCF: /tmp/RtmpBA2UCA/Case10_mother_845d4e3f0922.vcf
+Using SeqArray storage option: ZIP_RA
+Converting temporary VCF to SeqArray GDS: out/build/gds_by_chrom/Case10_mother_chr6.gds
+##< 2026-06-01 12:10:28
+Variant Call Format (VCF) Import:
+    file:
+        Case10_mother_845d4e3f0922.vcf (1.7M)
+    file format: VCFv4.2
+    genome reference: <unknown>
+    # of sets of chromosomes (ploidy): 2
+    # of samples: 1
+    genotype field: GT
+    genotype storage: bit2
+    compression method: customized
+    INFO:
+    FORMAT: DS
+Output:
+    out/build/gds_by_chrom/Case10_mother_chr6.gds
+    [Progress Info: Case10_mother_chr6.gds.progress.txt]
+Parsing 'Case10_mother_845d4e3f0922.vcf':
++ genotype/data   { Bit2 2x1x46160 ZIP_ra, 16B }
+Digests:
+    sample.id  [md5: 54198eba06df6f5b67dfa6c46afb7de9]
+    variant.id  [md5: 53110f9c2f159db64c49a6f7fd219561]
+    position  [md5: 58125b311d0429e4bf11901a3da1c5db]
+    chromosome  [md5: 0c2d238cd1a783861c5b4e06b1586617]
+    allele  [md5: 24a1f19d6062c6cac78732881fb3dd35]
+    genotype  [md5: 5aed04832e0ce3180b9d541a103ed308]
+    phase  [md5: 77d9ac371dc085860c11ae17f755aae0]
+    annotation/id  [md5: 8cbe036b354f62d069906e6d2219b908]
+    annotation/qual  [md5: f9edcebaf8ec1123276950d44ac72ca3]
+    annotation/filter  [md5: d6b7f57ecc1739bcbc3efe3f11dfd614]
+    annotation/format/DS  [md5: 373629e6fbfaa1f1323ad2b908f98556]
+Done.
+##> 2026-06-01 12:10:28
+Appending IMPACT/FAVOR annotations to GDS...
+Optimizing GDS...
+Open ‘Case10_mother_chr6.gds’
+Adding run-length encoding for chromosomes ...  [Done]
+Clean up the fragments of GDS file:
+    open the file 'out/build/gds_by_chrom/Case10_mother_chr6.gds' (1.3M)
+    # of fragments: 330
+    save to 'out/build/gds_by_chrom/Case10_mother_chr6.gds.tmp'
+    rename 'out/build/gds_by_chrom/Case10_mother_chr6.gds.tmp' (1.3M, reduced: 51.7K)
+    # of fragments: 132
+Running post-write sanity check...
+Done: out/build/gds_by_chrom/Case10_mother_chr6.gds
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 7 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr7.flat.parquet --summary-json out/build/summary/Case10_mother_chr7.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=7/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 8 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr8.flat.parquet --summary-json out/build/summary/Case10_mother_chr8.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=8/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 9 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr9.flat.parquet --summary-json out/build/summary/Case10_mother_chr9.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=9/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 10 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr10.flat.parquet --summary-json out/build/summary/Case10_mother_chr10.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=10/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 11 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr11.flat.parquet --summary-json out/build/summary/Case10_mother_chr11.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=11/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 12 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr12.flat.parquet --summary-json out/build/summary/Case10_mother_chr12.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=12/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 13 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr13.flat.parquet --summary-json out/build/summary/Case10_mother_chr13.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=13/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 14 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr14.flat.parquet --summary-json out/build/summary/Case10_mother_chr14.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=14/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 15 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr15.flat.parquet --summary-json out/build/summary/Case10_mother_chr15.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=15/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 16 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr16.flat.parquet --summary-json out/build/summary/Case10_mother_chr16.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=16/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 17 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr17.flat.parquet --summary-json out/build/summary/Case10_mother_chr17.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=17/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 18 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr18.flat.parquet --summary-json out/build/summary/Case10_mother_chr18.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=18/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 19 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr19.flat.parquet --summary-json out/build/summary/Case10_mother_chr19.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=19/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 20 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr20.flat.parquet --summary-json out/build/summary/Case10_mother_chr20.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=20/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 21 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr21.flat.parquet --summary-json out/build/summary/Case10_mother_chr21.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=21/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome 22 --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chr22.flat.parquet --summary-json out/build/summary/Case10_mother_chr22.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=22/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome X --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chrX.flat.parquet --summary-json out/build/summary/Case10_mother_chrX.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=X/data.parquet
++ /home/boehlern/projects/IMPACT/IMPACT-SNV/.venv/bin/python3 /home/boehlern/projects/IMPACT/IMPACT-SNV/impact_snv/gds/flatten.py --annotated-dir out/merged.annotated --genotypes-dir out/genotypes --gene-list /home/boehlern/projects/IMPACT/IMPACT-SNV/out/gene_lists/gene_lists/Case10.GeneList.txt --sample-id Case10_mother --chromosome Y --dosage-threshold 0.0 --out out/build/flat/Case10_mother_chrY.flat.parquet --summary-json out/build/summary/Case10_mother_chrY.summary.json
+ERROR: Missing chromosome parquet: out/merged.annotated/chromosome=Y/data.parquet

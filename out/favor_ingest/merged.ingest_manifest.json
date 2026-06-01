@@ -1,0 +1,36 @@
+{
+  "command": "favor-ingest",
+  "cwd": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_ingest",
+  "end_time_utc": "2026-05-31T02:37:15.935637+00:00",
+  "favor_bin": "favor",
+  "favor_command": [
+    "favor",
+    "ingest",
+    "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/merged.noVAF.vcf.gz"
+  ],
+  "force": true,
+  "ingested_dir": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_ingest/merged.ingested",
+  "input_index": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/merged.noVAF.vcf.gz.csi",
+  "input_vcf": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/merged.noVAF.vcf.gz",
+  "max_progress_log_line_chars": 300,
+  "message": "Expected ingested output was not created: /home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_ingest/merged.ingested",
+  "observed_output_latest_mtime_utc": {
+    "ingested_dir": null
+  },
+  "observed_output_sizes_bytes": {
+    "ingested_dir": 0
+  },
+  "out_dir": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_ingest",
+  "out_prefix": "merged",
+  "progress_interval_seconds": 60,
+  "progress_mode": "normal",
+  "quiet": false,
+  "reference_build": "GRCh38",
+  "removed_paths": [],
+  "return_code": 0,
+  "start_time_utc": "2026-05-31T02:36:49.932502+00:00",
+  "status": "failed",
+  "stderr_log": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_ingest/logs/merged.favor_ingest.stderr.log",
+  "stdout_log": "/home/boehlern/projects/IMPACT/IMPACT-SNV/out/favor_ingest/logs/merged.favor_ingest.stdout.log",
+  "tail_log_lines": 0
+}
