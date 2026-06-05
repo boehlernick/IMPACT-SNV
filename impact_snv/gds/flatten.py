@@ -17,6 +17,7 @@ required by the current R GDS writer.
 from __future__ import annotations
 
 import argparse
+import ast
 from collections import Counter
 import json
 import math
@@ -133,6 +134,79 @@ def collapse_list(value: Any, sep: str = ";") -> str:
         if sx:
             vals.append(sx)
     return sep.join(vals)
+
+
+def unique_preserving_order(values: Sequence[str]) -> List[str]:
+    seen = set()
+    ordered: List[str] = []
+    for value in values:
+        if value and value not in seen:
+            seen.add(value)
+            ordered.append(value)
+    return ordered
+
+
+def normalize_clnsig_tokens(value: Any) -> List[str]:
+    tokens: List[str] = []
+
+    def push_token(token: str) -> None:
+        token = re.sub(r"\s+", " ", token).strip(" \t\r\n\"'")
+        if not token:
+            return
+        lower = token.lower().replace("_", " ")
+        if lower in {"na", "none", "null", "nan", "not available"}:
+            return
+        if lower == "likely pathogenic":
+            token = "Likely_pathogenic"
+        elif lower == "pathogenic":
+            token = "Pathogenic"
+        tokens.append(token)
+
+    def walk(v: Any) -> None:
+        if v is None:
+            return
+        if isinstance(v, dict):
+            for key in ("clinical_significance", "clnsig", "CLNSIG"):
+                if key in v:
+                    walk(v[key])
+                    return
+            return
+        if isinstance(v, (list, tuple, set)):
+            for item in v:
+                walk(item)
+            return
+        if hasattr(v, "tolist") and not isinstance(v, str):
+            walk(v.tolist())
+            return
+
+        text = clean_str(v).strip()
+        if not text:
+            return
+
+        parsed = None
+        if text and text[0] in "[{(":
+            try:
+                parsed = ast.literal_eval(text)
+            except Exception:
+                parsed = None
+        if parsed is not None and parsed is not v:
+            walk(parsed)
+            return
+
+        for part in re.split(r"[|;,/]", text):
+            push_token(part)
+
+    walk(value)
+    return unique_preserving_order(tokens)
+
+
+def normalize_clnsig(value: Any) -> str:
+    return ";".join(normalize_clnsig_tokens(value))
+
+
+def normalize_genecode_info(genes: Sequence[str]) -> str:
+    cleaned = [clean_str(g).strip() for g in genes]
+    return ",".join(unique_preserving_order([g for g in cleaned if g]))
 
 
 def normalize_exonic_category_chunks(value: Any) -> List[str]:
@@ -291,13 +365,18 @@ def get_variant_fields(row: pd.Series) -> Tuple[str, int, str, str]:
 
 def extract_clnsig(row: pd.Series) -> str:
     clinvar = row.get("clinvar")
-    return first_nonempty(
+    candidates = [
         row.get("clnsig"),
         row.get("clinvar_clnsig"),
         nested_get(clinvar, ["clinical_significance"]),
         nested_get(clinvar, ["clnsig"]),
         nested_get(clinvar, ["CLNSIG"]),
-    )
+    ]
+    for candidate in candidates:
+        normalized = normalize_clnsig(candidate)
+        if normalized:
+            return normalized
+    return ""
 
 
 def extract_apc_protein_function(row: pd.Series) -> Tuple[float, bool]:
@@ -332,6 +411,7 @@ def flatten_annotation_row(row: pd.Series, gene_scores: Dict[str, float]) -> Opt
     region_type = clean_str(struct_get(gencode, "region_type"))
     exonic_category = map_legacy_exonic_category(consequence, ref, alt)
     genes_joined = ";".join(matched)
+    genes_info = normalize_genecode_info(matched)
     scores_joined = ";".join("" if math.isnan(s) else str(float(s)) for s in scores)
 
     bravo_af = extract_af(row, "bravo_af", "bravo", "bravo_af")
@@ -380,7 +460,7 @@ def flatten_annotation_row(row: pd.Series, gene_scores: Dict[str, float]) -> Opt
         "gencode_genes": genes_joined,
         "gencode_region_type": region_type,
         "gencode_consequence": collapse_list(consequence, sep=";"),
-        "genecode_comprehensive_info": transcript_info if transcript_info else genes_joined,
+        "genecode_comprehensive_info": genes_info,
         "genecode_comprehensive_exonic_category": exonic_category,
         "refseq_exonic_category": exonic_category,
         "ucsc_exonic_category": exonic_category,

@@ -364,3 +364,126 @@ def test_flatten_one_supports_alt_with_multiallelic_style_string(tmp_path: Path)
     assert flat_df.iloc[0]["alt"] == "A,G"
     assert flat_df.iloc[0]["allele"] == "A,G"
     assert summary["final_carried_gene_matched_rows"] == 1
+
+
+def test_flatten_one_normalizes_clnsig_list_string_and_gene_info(tmp_path: Path) -> None:
+    annotated_dir = tmp_path / "annotated"
+    genotypes_dir = tmp_path / "genotypes"
+    gene_list = tmp_path / "GeneList.txt"
+
+    gene_list.write_text("symbol\tglobalScore\nWAS\t0.91\n", encoding="utf-8")
+    genotypes_dir.mkdir(parents=True, exist_ok=True)
+    (genotypes_dir / "samples.txt").write_text("S001\n", encoding="utf-8")
+
+    ann_df = pd.DataFrame(
+        [
+            {
+                "chromosome": "X",
+                "position": 249,
+                "ref": "C",
+                "alt": "A",
+                "gencode": {
+                    "genes": ["WAS"],
+                    "consequence": ["stop_gained"],
+                    "region_type": "exonic",
+                    "transcripts": [
+                        {
+                            "gene": "WAS",
+                            "transcript_id": "ENST00000376701.4",
+                            "location": "exon2",
+                            "hgvsc": "c.C249A",
+                            "hgvsp": "p.Y83X",
+                        }
+                    ],
+                },
+                "clnsig": "['Pathogenic']",
+                "apc_protein_function_v3": 0.4,
+                "bravo_af": 0.01,
+            }
+        ]
+    )
+    _write_fixture_parquet(annotated_dir, "X", ann_df)
+
+    geno_df = pd.DataFrame(
+        [
+            {
+                "chromosome": "X",
+                "position": 249,
+                "ref": "C",
+                "alt": "A",
+                "dosages": [1.0],
+            }
+        ]
+    )
+    _write_fixture_parquet(genotypes_dir, "X", geno_df)
+
+    flat_df, summary = flatten_one(
+        annotated_dir=annotated_dir,
+        genotypes_dir=genotypes_dir,
+        gene_list=gene_list,
+        sample_id="S001",
+        chromosome="X",
+        dosage_threshold=0.0,
+    )
+
+    assert len(flat_df) == 1
+    assert flat_df.iloc[0]["clnsig"] == "Pathogenic"
+    assert flat_df.iloc[0]["genecode_comprehensive_info"] == "WAS"
+    assert "transcript_id" in flat_df.iloc[0]["AAChange_refGene"]
+    assert summary["rows_with_clnsig"] == 1
+
+
+def test_flatten_one_normalizes_clnsig_list_and_likely_pathogenic(tmp_path: Path) -> None:
+    annotated_dir = tmp_path / "annotated"
+    genotypes_dir = tmp_path / "genotypes"
+    gene_list = tmp_path / "GeneList.txt"
+
+    gene_list.write_text("symbol\tglobalScore\nTP53\t0.95\n", encoding="utf-8")
+    genotypes_dir.mkdir(parents=True, exist_ok=True)
+    (genotypes_dir / "samples.txt").write_text("S001\n", encoding="utf-8")
+
+    ann_df = pd.DataFrame(
+        [
+            {
+                "chromosome": "1",
+                "position": 101,
+                "ref": "A",
+                "alt": "G",
+                "gencode": {
+                    "genes": ["TP53"],
+                    "consequence": ["missense_variant"],
+                    "region_type": "exonic",
+                    "transcripts": ["TP53:NM_000546:exon5:c.215C>G:p.Pro72Arg"],
+                },
+                "clnsig": ["Likely pathogenic", "Pathogenic"],
+                "apc_protein_function_v3": 0.2,
+                "bravo_af": 0.02,
+            }
+        ]
+    )
+    _write_fixture_parquet(annotated_dir, "1", ann_df)
+
+    geno_df = pd.DataFrame(
+        [
+            {
+                "chromosome": "1",
+                "position": 101,
+                "ref": "A",
+                "alt": "G",
+                "dosages": [1.0],
+            }
+        ]
+    )
+    _write_fixture_parquet(genotypes_dir, "1", geno_df)
+
+    flat_df, _ = flatten_one(
+        annotated_dir=annotated_dir,
+        genotypes_dir=genotypes_dir,
+        gene_list=gene_list,
+        sample_id="S001",
+        chromosome="1",
+        dosage_threshold=0.0,
+    )
+
+    assert len(flat_df) == 1
+    assert flat_df.iloc[0]["clnsig"] == "Likely_pathogenic;Pathogenic"

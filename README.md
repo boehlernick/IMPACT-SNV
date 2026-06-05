@@ -35,13 +35,9 @@ IMPACT-SNV currently supports two Step 3 annotation backends during the refactor
 - legacy FAVORannotator compatibility (`legacy-favorannotator` backend)
 - FAVOR CLI (`favor-cli` backend)
 
-FAVOR was selected because it provides a large precomputed and harmonized annotation resource suitable for WGS-scale variant prioritization. The annotation set includes population allele frequencies, transcript consequences, conservation metrics, ClinVar assertions, regulatory annotations, and aggregate protein impact metrics.
+FAVOR is used as an annotation backend for WGS-scale prioritization. In the maintained local path, annotations are produced first and genotypes are extracted separately.
 
-In IMPACT-SNV, FAVOR annotations are appended to GDS/aGDS files generated from VCF inputs, allowing large variant datasets to be stored, queried, and prioritized efficiently. This design fits the workflow’s goal of scalable phenotype-driven prioritization across WGS-derived variant calls.
-
-A FAVOR-CLI-compatible path now exists in the repository through the backend-based `impact-snv favor-annotate` command and the RAP-oriented `step3_favorcli_annotation/` module. Legacy FAVORannotator support remains in place for backward compatibility while the FAVOR-CLI path is hardened against the existing Step 4 and output-GDS contracts.
-
-For the supported v1.0.0 release path, FAVOR is currently treated as annotation-only. Native FAVOR `.cohort` or FAVOR-generated genotype outputs remain experimental/discovery-only and are not part of the release gate; the supported path is `favor-annotate` plus `impact-snv extract-genotypes`.
+The repository includes a hardened FAVOR-CLI path (`impact-snv favor-annotate`) while keeping legacy FAVORannotator compatibility for backward support. For the current release path, FAVOR `.cohort` or FAVOR-generated genotype outputs are not part of the supported release gate.
 
 ## Pipeline Architecture
 
@@ -64,103 +60,81 @@ VCF Files → impact-snv sanitize-vcfs (when sample IDs collide) → impact-snv 
 | 3 | `Step3_favorannotator-rap/`, `step3_favorcli_annotation/`, `impact_snv/favor/` | Annotates variants using the selected Step 3 backend | legacy `.gds`, FAVOR-ingested directories, or backend dry-run inputs | canonical `<out_prefix>.annotated` outputs plus compatibility-staged inputs |
 | 4 | `step4_impact_prioritization/`, `impact_snv/gene_lists.py`, `impact_snv/gds/` | Builds phenotype-driven per-sample GeneLists, scores, finalizes, validates, and QC-checks per-sample outputs | annotated legacy GDS or pre-prioritization per-sample GDS plus a single `GeneList.txt` or a per-sample gene-list manifest | `*_SNV_IMPACT.gds`, manifests, and QC summaries |
 
-## Requirements
+## Installation
 
-### Python Package And Local CLI
+### Prerequisites
+
+Minimum required tools for the maintained local CLI path:
+
 - **Python** >= 3.10
-- Python package dependencies declared in `pyproject.toml`: `pandas`, `pyarrow`
-- **Rscript** with the packaged GDS path dependencies:
-  - `optparse`, `arrow`, `SeqArray`, `gdsfmt`, `stringi`
-- **BCFtools**, **bgzip**, and **tabix** when using `impact-snv merge` or `impact-snv extract-genotypes`
-- A **FAVOR CLI** binary named `favor` when using the `favor-cli` backend
+- **R** with `Rscript`
+- **BCFtools**, **bgzip**, and **tabix** (required for `impact-snv merge` and `impact-snv extract-genotypes`)
+- **FAVOR CLI** executable named `favor` on `PATH` when using backend `favor-cli`
 
-### Legacy Applet Extras
-- `SeqVarTools`, `dplyr`, and `tidyr` remain required by legacy R/DNAnexus components
-- **Rust** and **xsv** are only required for the legacy `Step3_favorannotator-rap/` path
+Python package dependencies are declared in `pyproject.toml` (`pandas`, `pyarrow`).
 
-### Platform
-The repository still contains **DNAnexus Research Analysis Platform** applets under the step folders, each with its own `dxapp.json`. The packaged `impact-snv` CLI can also be run locally and is the maintained surface for the refactor-era build, finalize, validate, and QC workflow.
+R-side GDS scripts require packages including `optparse`, `arrow`, `SeqArray`, `gdsfmt`, and `stringi`.
 
-## Input Requirements
+### Install The Python CLI
 
-### Step 1: VCF Merge
-- **Input**: One or more VCF or VCF.GZ files
-- **Output**: Chromosome-separated VCF.GZ files (`merged_chr1.vcf.gz`, `merged_chr2.vcf.gz`, etc.)
+From repository root:
 
-### Step 2: VCF to GDS
-- **Input**: VCF.GZ file from Step 1
-- **Output**: GDS file (`merged_chr*.gds`)
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e .
+impact-snv --help
+```
 
-### Step 3: FAVOR Annotation
-- **`favor-cli` backend input**: FAVOR-ingested directory (`<out_prefix>.ingested`) produced by `impact-snv favor-ingest`. The input VCF must have a `.csi` or `.tbi` index alongside it.
-- **`legacy-favorannotator` backend input**: existing legacy annotated/genotype directories for compatibility staging
-- **`favor-cli-skeleton` backend input**: GDS or VCF for dry-run planning
-- **Output**: Canonical `<out_prefix>.annotated` directory written to `<out_dir>`, consumed by `impact-snv build-gds`; genotype extraction is handled separately by `impact-snv extract-genotypes`
+### Install / Repair R Dependencies (renv)
 
-The package CLI `legacy-favorannotator` backend stages existing legacy outputs for downstream compatibility. It does not locally invoke the old DNAnexus FAVORannotator applet.
+This repository includes `renv.lock` and activates `renv` in packaged R scripts.
 
-### Step 4: IMPACT Prioritization And Finalization
-- **Input**:
-  - Legacy annotated chromosome GDS files from Step 3, or pre-prioritization per-sample GDS files from `impact-snv build-gds`
-  - Gene-disease association input, either:
-    - one shared `GeneList.txt`, or
-    - a per-sample gene-list manifest produced by `impact-snv build-gene-lists`
-  - Each `GeneList.txt`-style file remains tab-separated with columns:
-    - `symbol`: Gene symbol (e.g., `GJB2`, `OTOF`)
-    - `globalScore`: Open Targets association score (0-1)
-- **Output**: Per-sample final GDS files (`{sample_id}_SNV_IMPACT.gds`)
+Recommended setup:
 
-## Output File Format
+```bash
+R -q -e "renv::restore(prompt = FALSE)"
+```
 
-The final `*_SNV_IMPACT.gds` files contain:
+If your cache contains broken symlinks or missing packages, repair then restore:
 
-### Core SeqArray Nodes
-| Node | Type | Description |
-|------|------|-------------|
-| `variant.id` | integer | Unique variant identifier |
-| `chromosome` | integer/character | Chromosome |
-| `position` | integer | 1-based genomic position |
-| `sample.id` | character | Sample identifiers |
-| `genotype` | integer | Genotype array |
+```bash
+R -q -e "Sys.setenv(RENV_CONFIG_CACHE_SYMLINKS='FALSE'); renv::repair(); renv::restore(prompt = FALSE)"
+```
 
-### IMPACT Score Annotations
-| Node | Type | Description |
-|------|------|-------------|
-| `annotation/info/impact_score` | numeric | Prioritization score (0-100) |
-| `annotation/info/impact_score_calc` | character | Tier and calculation formula |
-| `annotation/info/tier` | integer | Priority tier (1-4) |
-| `annotation/info/scoring_gene` | character | Gene selected for IMPACT scoring |
-| `annotation/info/scoring_gene_score` | numeric | Gene-level score used in the tier formula |
+Optional dependency sanity check:
 
-### ClinVar Significance Flags
-Boolean indicators under `annotation/info/clnsig_flags/`:
-- `pathogenic`, `likely_pathogenic`, `uncertain_significance`
-- `likely_benign`, `benign`
-- `pathogenic_low_penetrance`, `likely_pathogenic_low_penetrance`
-- `established_risk_allele`, `likely_risk_allele`, `uncertain_risk_allele`
-- `affects`, `association`, `drug_response`, `confers_sensitivity`
-- `protective`, `other`, `conflicting_interpretations_of_pathogenicity`, `not_provided`
+```bash
+R -q -e "library(optparse); library(arrow); library(SeqArray); library(gdsfmt)"
+```
 
-### FAVOR Functional Annotations
-| Node | Description |
-|------|-------------|
-| `annotation/info/FunctionalAnnotation/VarInfo` | IMPACT-VIS variant key in `chr-pos-ref-alt` format |
-| `annotation/info/FunctionalAnnotation/genecode_comprehensive_info` | Gene information |
-| `annotation/info/FunctionalAnnotation/clnsig` | ClinVar clinical significance |
-| `annotation/info/FunctionalAnnotation/clndn` | ClinVar disease name |
-| `annotation/info/FunctionalAnnotation/bravo_af` | Bravo allele frequency |
-| `annotation/info/FunctionalAnnotation/aloft_prediction` | ALOFT compatibility field expected by downstream readers |
-| `annotation/info/FunctionalAnnotation/apc_protein_function_v3` | Protein function score |
+### Platform Notes
 
-### Annotation Compatibility And Provenance Nodes
-When building GDS from flat parquet, IMPACT-SNV now records explicit fallback/provenance metadata under:
+The repository still contains **DNAnexus Research Analysis Platform** applets under the step folders (each with its own `dxapp.json`).
+The packaged `impact-snv` CLI is the maintained local interface for build/finalize/validate/QC workflows.
 
-- `annotation/info/IMPACT_AnnotationCompatibility/fallback_flags`
-- `annotation/info/IMPACT_AnnotationCompatibility/fallback_count`
-- `annotation/info/IMPACT_AnnotationProvenance/adapter_version`
-- `annotation/info/IMPACT_AnnotationProvenance/compatibility_contract_version`
+## Inputs And Outputs (Concise)
 
-These nodes make defaulted/backfilled values auditable rather than implicit.
+Maintained local workflow inputs:
+
+- Variant input: one or more VCF/VCF.GZ files
+- Step 3 annotation input: FAVOR-ingested directory (`<out_prefix>.ingested`) for backend `favor-cli`
+- Genotype input for build stage: output directory from `impact-snv extract-genotypes`
+- Gene scoring input: one shared `GeneList.txt` or a per-sample manifest from `impact-snv build-gene-lists`
+
+Maintained local workflow outputs:
+
+- Step 3: canonical `<out_prefix>.annotated` directory
+- Build stage: per-sample `*_SNV_IMPACT.preprioritization.gds`
+- Final stage: per-sample `{sample_id}_SNV_IMPACT.gds`
+
+For full schema and contract details, see:
+
+- `docs/pipeline_contract.md`
+- `docs/annotation_compatibility_contract.md`
+- `docs/output_gds_contract.md`
+- `docs/chromosome_handling_contract.md`
 
 ## Usage
 
@@ -177,14 +151,9 @@ Use each step directory's README and `dxapp.json` for platform-specific invocati
 
 ### Local Execution
 
-Install the package in your environment and inspect the available commands:
+#### Quickstart (Maintained Local Path)
 
-```bash
-python -m pip install -e .
-impact-snv --help
-```
-
-When input VCFs come from repeated trio-style fixtures with sample IDs like `proband`, `mother`, and `father`, sanitize them before merge so downstream GDS and IMPACT-VIS sample IDs stay unique and stable:
+This is the current supported local sequence:
 
 ```bash
 impact-snv sanitize-vcfs \
@@ -194,57 +163,25 @@ impact-snv sanitize-vcfs \
 impact-snv merge \
   --vcf-manifest out/sanitized_inputs/sanitized_vcfs.tsv \
   --out-vcf out/merged.vcf.gz
-```
 
-By default the sanitizer derives a case prefix from the filename, so trio sample IDs like `proband`, `mother`, and `father` become names such as `Case1_proband`, `Case1_mother`, and `Case1_father`.
-
-To build phenotype-specific per-sample GeneLists from Open Targets, provide a sample manifest and a phenotype manifest. The resulting `sample_gene_lists.tsv` can be passed directly into `build-gds` and `finalize-gds`:
-
-```bash
-impact-snv build-gene-lists \
-  --samples-manifest tests/production_test/samples.csv \
-  --phenotypes-manifest tests/production_test/phenotypes.csv \
-  --out-dir out/gene_lists
-```
-
-Step 3 runs in two stages. First, ingest the merged VCF into FAVOR's variant-set format (`<out_prefix>.ingested`). The input VCF must have a `.csi` or `.tbi` index alongside it:
-
-```bash
 impact-snv favor-ingest \
   --input-vcf out/merged.vcf.gz \
   --out-dir out/ \
   --out-prefix case1
-```
 
-Then annotate the ingested variant set against the FAVOR database. This is the long-running step — expect several hours for WGS-scale cohorts. Future releases will seek to parallelize this operation to increase efficiency. The default backend is `favor-cli`; `--backend` may be omitted:
-
-```bash
 impact-snv favor-annotate \
   --ingested-dir out/case1.ingested \
   --out-dir out/ \
   --out-prefix case1
-```
 
-Legacy compatibility staging (for pre-existing FAVORannotator outputs):
-
-```bash
-impact-snv favor-annotate \
-  --backend legacy-favorannotator \
-  --legacy-annotated-dir path/to/legacy.annotated \
-  --legacy-genotypes-dir path/to/legacy.genotypes \
-  --legacy-stage-mode symlink \
-  --out-dir out/ \
-  --out-prefix case1
-```
-
-This backend stages pre-existing legacy outputs only. It does not execute the DNAnexus `Step3_favorannotator-rap/` applet locally.
-
-`impact-snv favor-annotate` does not replace genotype extraction. For the maintained local release path, extract genotypes separately and then build, finalize, validate, and QC the per-sample GDS outputs:
-
-```bash
 impact-snv extract-genotypes \
   --input-vcf out/merged.vcf.gz \
   --out-dir out/genotypes
+
+impact-snv build-gene-lists \
+  --samples-manifest tests/production_test/samples.csv \
+  --phenotypes-manifest tests/production_test/phenotypes.csv \
+  --out-dir out/gene_lists
 
 impact-snv build-gds \
   --annotated-dir out/merged.annotated \
@@ -267,6 +204,12 @@ impact-snv qc-build \
   --out-dir out/qc \
   --qc-mode strict
 ```
+
+#### Notes For Resuming Interrupted `build-gds` Runs
+
+- `build-gds` skips existing per-chromosome flat parquet and GDS outputs unless `--force` is provided.
+- Re-running the same command is safe for resume behavior.
+- Use `--force` only when you want to overwrite generated outputs.
 
 For a concrete tested example of the build/finalize/validate/QC path, see `tests/test_release_cli_e2e.py`.
 
